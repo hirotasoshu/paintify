@@ -1,4 +1,5 @@
 .venv/
+.worktrees/
 dist/
 test.jgp
 __pycache__/
