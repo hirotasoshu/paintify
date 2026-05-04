@@ -199,6 +199,7 @@ renderers, or build UI around the paint-by-numbers data.
 
 ```bash
 make lint
+make test
 make build
 ```
 

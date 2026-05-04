@@ -8,7 +8,6 @@ hooks:
 
 lint:
 	uv run prek run --all-files --show-diff-on-failure --color=always
-	uv run pytest
 
 test:
 	uv run pytest
