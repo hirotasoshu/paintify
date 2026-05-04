@@ -1,3 +1,5 @@
 .venv/
 dist/
 test.jgp
+__pycache__/
+*.py[cod]
