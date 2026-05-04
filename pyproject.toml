@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "paintify"
+version = "0.1.0"
+description = "Generate paint-by-numbers artifacts from an input image."
+readme = "README.md"
+requires-python = "==3.14.3"
+keywords = ["image-processing", "paint-by-numbers", "cli"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Multimedia :: Graphics",
+  "Topic :: Utilities",
+]
+dependencies = [
+  "numpy>=1.24",
+  "pillow>=10.0",
+  "rich>=13.0",
+  "scipy>=1.11.4",
+  "scikit-image>=0.22",
+  "typer>=0.9",
+]
+
+[project.scripts]
+paintify = "paintify.cli:app"
+
+[dependency-groups]
+dev = [
+  "prek>=0.2.0",
+  "pytest>=7.4",
+  "ruff>=0.4",
+  "ty>=0.0.1a21",
+]
+
+[tool.uv]
+package = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py314"
+
+[tool.ty.environment]
+python-version = "3.14"
