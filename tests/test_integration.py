@@ -3,13 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import cv2
 import numpy as np
-from PIL import Image
 from typer.testing import CliRunner
 
 from paintify.cli import app
 from paintify.config import PaintifyConfig
 from paintify.pipeline import run_pipeline
+
+
+def _write_rgb_image(path: Path, rgb: np.ndarray) -> None:
+    assert cv2.imwrite(str(path), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
 
 
 def test_cli_integration_smoke_generates_artifacts(tmp_path: Path) -> None:
@@ -19,7 +23,7 @@ def test_cli_integration_smoke_generates_artifacts(tmp_path: Path) -> None:
     image[:8, :8] = (220, 20, 20)
     image[:8, 8:] = (20, 140, 200)
     image[8:, :] = (240, 230, 120)
-    Image.fromarray(image, mode="RGB").save(image_path)
+    _write_rgb_image(image_path, image)
 
     result = CliRunner().invoke(
         app,
@@ -59,7 +63,7 @@ def test_cli_integration_is_deterministic(tmp_path: Path) -> None:
     image = np.zeros((12, 12, 3), dtype=np.uint8)
     image[:, :6] = (200, 50, 40)
     image[:, 6:] = (40, 80, 210)
-    Image.fromarray(image, mode="RGB").save(image_path)
+    _write_rgb_image(image_path, image)
 
     runner = CliRunner()
     outputs = [tmp_path / "out1", tmp_path / "out2"]
@@ -94,7 +98,7 @@ def test_hard_difficulty_preserves_palette_free_default(tmp_path: Path) -> None:
     image = np.zeros((10, 10, 3), dtype=np.uint8)
     image[:, :5] = (210, 40, 40)
     image[:, 5:] = (40, 80, 210)
-    Image.fromarray(image, mode="RGB").save(image_path)
+    _write_rgb_image(image_path, image)
 
     result = CliRunner().invoke(
         app, [str(image_path), "-o", str(output_dir), "--difficulty", "hard"]
@@ -111,7 +115,7 @@ def test_manual_mode_manifest_marks_manual_difficulty(tmp_path: Path) -> None:
     image = np.zeros((10, 10, 3), dtype=np.uint8)
     image[:, :5] = (210, 40, 40)
     image[:, 5:] = (40, 80, 210)
-    Image.fromarray(image, mode="RGB").save(image_path)
+    _write_rgb_image(image_path, image)
 
     result = CliRunner().invoke(
         app,
@@ -146,7 +150,7 @@ def test_palette_output_is_compacted_after_region_merge(tmp_path: Path) -> None:
     image = np.zeros((8, 8, 3), dtype=np.uint8)
     image[:, :] = (255, 255, 255)
     image[4, 4] = (255, 0, 0)
-    Image.fromarray(image, mode="RGB").save(image_path)
+    _write_rgb_image(image_path, image)
 
     config = PaintifyConfig(
         input_path=image_path,

@@ -1,4 +1,4 @@
-from paintify.processing.image import ImageInputError, PillowImageLoader
+from paintify.processing.image import ImageInputError, OpenCvImageLoader
 from paintify.processing.labels import DistanceTransformLabelPlacer
 from paintify.processing.palette import (
     CompactingPaletteBuilder,
@@ -15,6 +15,6 @@ __all__ = [
     "ImageInputError",
     "KMeansQuantizer",
     "PaletteEntryBuilder",
-    "PillowImageLoader",
+    "OpenCvImageLoader",
     "StarterPalette",
 ]

@@ -20,7 +20,7 @@ from paintify.processing import (
     ConnectedComponentRegionProcessor,
     DistanceTransformLabelPlacer,
     KMeansQuantizer,
-    PillowImageLoader,
+    OpenCvImageLoader,
 )
 from paintify.processing.palette import PaletteEntryBuilder
 from paintify.rendering import (
@@ -140,7 +140,7 @@ class PaintifyPipeline:
 
 def create_paintify_generator() -> PaintifyGenerator:
     return PaintifyGenerator(
-        image_loader=PillowImageLoader(),
+        image_loader=OpenCvImageLoader(),
         quantizer=KMeansQuantizer(),
         region_processor=ConnectedComponentRegionProcessor(),
         palette_builder=CompactingPaletteBuilder(),

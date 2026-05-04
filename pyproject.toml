@@ -19,10 +19,7 @@ classifiers = [
 ]
 dependencies = [
   "numpy>=1.24",
-  "pillow>=10.0",
   "rich>=13.0",
-  "scipy>=1.11.4",
-  "scikit-image>=0.22",
   "typer>=0.9",
   "opencv-python-headless>=4.13.0.92",
 ]

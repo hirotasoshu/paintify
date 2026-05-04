@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import cast
 
 import numpy as np
-from skimage.color import lab2rgb, rgb2lab
 
 from paintify.models import PaletteEntry, Region
+from paintify.processing.color import lab_to_rgb, rgb_to_lab
 
 
 class StarterPalette:
@@ -34,10 +33,10 @@ class StarterPalette:
         starter_rgb = np.array(
             [cls._hex_to_rgb(value) for value in cls.PALETTES[starter_name]], dtype=np.uint8
         )
-        starter_lab = rgb2lab(starter_rgb.reshape(1, -1, 3) / 255.0).reshape(-1, 3)
+        starter_lab = rgb_to_lab(starter_rgb)
         distances = np.linalg.norm(lab_colors[:, None, :] - starter_lab[None, :, :], axis=2)
         snapped = starter_lab[np.argmin(distances, axis=1)]
-        return cast(np.ndarray, snapped)
+        return snapped
 
     @staticmethod
     def _hex_to_rgb(value: str) -> tuple[int, int, int]:
@@ -62,9 +61,7 @@ class PaletteEntryBuilder:
 
     @staticmethod
     def _lab_to_uint8_rgb(lab_colors: np.ndarray) -> np.ndarray:
-        rgb = lab2rgb(lab_colors.reshape(1, -1, 3)).reshape(-1, 3)
-        clipped = np.clip(np.rint(rgb * 255), 0, 255).astype(np.uint8)
-        return cast(np.ndarray, clipped)
+        return lab_to_rgb(lab_colors)
 
 
 class CompactingPaletteBuilder:

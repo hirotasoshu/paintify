@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from skimage.color import rgb2lab
 
+from paintify.processing.color import rgb_to_lab
 from paintify.processing.palette import PaletteEntryBuilder, StarterPalette
 
 
@@ -36,15 +36,13 @@ class KMeansQuantizer:
                 seed,
             )
 
-        centers_lab = rgb2lab(
-            np.clip(centers, 0, 255).astype(np.uint8).reshape(1, -1, 3) / 255.0
-        ).reshape(-1, 3)
+        centers_lab = rgb_to_lab(np.clip(centers, 0, 255).astype(np.uint8))
         centers_lab = StarterPalette.snap_lab_colors(centers_lab, starter_palette)
         snapped_palette = PaletteEntryBuilder().build(centers_lab)
 
         lab_palette = np.array([entry.rgb for entry in snapped_palette], dtype=np.uint8)
-        lab_palette = rgb2lab(lab_palette.reshape(1, -1, 3) / 255.0).reshape(-1, 3)
-        unique_lab = rgb2lab(unique_rgb.reshape(1, -1, 3) / 255.0).reshape(-1, 3)
+        lab_palette = rgb_to_lab(lab_palette)
+        unique_lab = rgb_to_lab(unique_rgb)
         distances = np.linalg.norm(unique_lab[:, None, :] - lab_palette[None, :, :], axis=2)
         palette_labels_by_unique_color = np.argmin(distances, axis=1).astype(np.int32)
         palette_labels = palette_labels_by_unique_color[inverse]

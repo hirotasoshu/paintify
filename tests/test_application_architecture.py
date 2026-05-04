@@ -4,8 +4,8 @@ import ast
 import json
 from pathlib import Path
 
+import cv2
 import numpy as np
-from skimage.color import rgb2lab
 
 from paintify.config import PaintifyConfig
 from paintify.models import (
@@ -29,6 +29,14 @@ from paintify.rendering import (
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+def _rgb_to_lab(rgb: np.ndarray) -> np.ndarray:
+    lab = cv2.cvtColor(rgb.reshape(1, -1, 3), cv2.COLOR_RGB2LAB).reshape(-1, 3)
+    converted = lab.astype(np.float64)
+    converted[:, 0] *= 100.0 / 255.0
+    converted[:, 1:] -= 128.0
+    return converted
+
+
 def test_generator_orchestrates_collaborators_around_render_document(tmp_path: Path) -> None:
     class FakeImageLoader:
         def load(self, path: Path, max_size: int, smooth_radius: float) -> np.ndarray:
@@ -47,9 +55,7 @@ def test_generator_orchestrates_collaborators_around_render_document(tmp_path: P
         ) -> tuple[np.ndarray, np.ndarray]:
             assert image.shape == (1, 1, 3)
             assert (max_colors, seed, starter_palette) == (2, 7, None)
-            lab_palette = rgb2lab(np.array([[[255, 255, 255]]], dtype=np.uint8) / 255.0).reshape(
-                1, 3
-            )
+            lab_palette = _rgb_to_lab(np.array([[255, 255, 255]], dtype=np.uint8))
             return np.zeros((1, 1), dtype=np.int32), lab_palette
 
     class FakeRegionProcessor:
@@ -190,6 +196,23 @@ def test_rendering_does_not_import_processing_or_pipeline_modules() -> None:
     forbidden_prefixes = ("paintify.processing", "paintify.pipeline", "paintify.painting")
 
     for path in rendering_files:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        imports = [node for node in ast.walk(tree) if isinstance(node, ast.Import | ast.ImportFrom)]
+        for node in imports:
+            if isinstance(node, ast.ImportFrom):
+                module_names = [node.module or ""]
+            else:
+                module_names = [alias.name for alias in node.names]
+            assert not any(
+                module_name.startswith(forbidden_prefixes) for module_name in module_names
+            ), f"{path.relative_to(PROJECT_ROOT)} imports {module_names}"
+
+
+def test_runtime_image_stack_uses_opencv_without_pillow_scikit_image_or_scipy() -> None:
+    runtime_files = (PROJECT_ROOT / "src" / "paintify").glob("**/*.py")
+    forbidden_prefixes = ("PIL", "skimage", "scipy")
+
+    for path in runtime_files:
         tree = ast.parse(path.read_text(encoding="utf-8"))
         imports = [node for node in ast.walk(tree) if isinstance(node, ast.Import | ast.ImportFrom)]
         for node in imports:

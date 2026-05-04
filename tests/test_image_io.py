@@ -2,23 +2,24 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image
+import cv2
+import numpy as np
 
 import pytest
 
-from paintify.processing.image import ImageInputError, PillowImageLoader
+from paintify.processing.image import ImageInputError, OpenCvImageLoader
 
 
-def test_load_image_applies_exif_orientation(tmp_path: Path) -> None:
-    image_path = tmp_path / "oriented.jpg"
-    image = Image.new("RGB", (2, 4), color=(255, 0, 0))
-    exif = Image.Exif()
-    exif[274] = 6
-    image.save(image_path, exif=exif)
+def test_load_image_resizes_and_keeps_rgb_channel_order(tmp_path: Path) -> None:
+    image_path = tmp_path / "input.png"
+    image = np.zeros((4, 8, 3), dtype=np.uint8)
+    image[:, :] = (255, 0, 0)
+    assert cv2.imwrite(str(image_path), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
-    loaded = PillowImageLoader().load(image_path, max_size=10, smooth_radius=0)
+    loaded = OpenCvImageLoader().load(image_path, max_size=4, smooth_radius=0)
 
     assert loaded.shape[:2] == (2, 4)
+    assert tuple(int(value) for value in loaded[0, 0]) == (255, 0, 0)
 
 
 def test_load_image_reports_unreadable_image_as_input_error(tmp_path: Path) -> None:
@@ -26,4 +27,4 @@ def test_load_image_reports_unreadable_image_as_input_error(tmp_path: Path) -> N
     image_path.write_text("definitely not an image", encoding="utf-8")
 
     with pytest.raises(ImageInputError, match="is not a readable image file"):
-        PillowImageLoader().load(image_path, max_size=10, smooth_radius=0)
+        OpenCvImageLoader().load(image_path, max_size=10, smooth_radius=0)

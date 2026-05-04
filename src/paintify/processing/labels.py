@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import cv2
 import numpy as np
-from scipy import ndimage  # type: ignore[import-untyped]
 
 from paintify.models import LabelPlacement, Region
 
@@ -33,4 +33,7 @@ class DistanceTransformLabelPlacer:
     @staticmethod
     def _distance_to_outside(mask: np.ndarray) -> np.ndarray:
         padded = np.pad(mask, 1, constant_values=False)
-        return ndimage.distance_transform_edt(padded)[1:-1, 1:-1]
+        distances = cv2.distanceTransform(
+            padded.astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE
+        )
+        return distances[1:-1, 1:-1]

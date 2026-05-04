@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from io import BytesIO
-
+import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 
 from paintify.config import PaintifyConfig
 from paintify.models import LabelPlacement, OutputArtifact, PaintByNumbersDocument, PaletteEntry
@@ -39,20 +37,24 @@ class PngPreviewRenderer:
         edges[1:, :] |= region_labels[1:, :] != region_labels[:-1, :]
         rgb[edges] = (0, 0, 0)
         scale = 6
-        image = Image.fromarray(rgb, mode="RGB").resize(
-            (width * scale, height * scale), Image.Resampling.NEAREST
+        image = cv2.resize(
+            rgb,
+            (width * scale, height * scale),
+            interpolation=cv2.INTER_NEAREST,
         )
-        draw = ImageDraw.Draw(image)
-        font = ImageFont.load_default()
         for placement in labels:
             text = str(placement.color_index + 1)
-            draw.text(
-                (placement.x * scale + scale // 2, placement.y * scale + scale // 2),
+            cv2.putText(
+                image,
                 text,
-                fill=(0, 0, 0),
-                anchor="mm",
-                font=font,
+                (placement.x * scale + 1, placement.y * scale + scale - 1),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.25,
+                (0, 0, 0),
+                1,
+                cv2.LINE_AA,
             )
-        output = BytesIO()
-        image.save(output, format="PNG")
-        return output.getvalue()
+        success, encoded = cv2.imencode(".png", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        if not success:
+            raise ValueError("failed to encode PNG preview")
+        return encoded.tobytes()

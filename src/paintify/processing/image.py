@@ -10,7 +10,7 @@ class ImageInputError(ValueError):
     pass
 
 
-class PillowImageLoader:
+class OpenCvImageLoader:
     def load(self, path: Path, max_size: int, smooth_radius: float) -> np.ndarray:
         image = cv2.imread(str(path), cv2.IMREAD_COLOR)
         if image is None:

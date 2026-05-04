@@ -4,7 +4,6 @@ from collections import Counter
 
 import cv2
 import numpy as np
-from scipy import ndimage  # type: ignore[import-untyped]
 
 from paintify.models import Region
 
@@ -150,12 +149,12 @@ class ConnectedComponentRegionProcessor:
         old_colors = color_labels[ys, xs]
         best_distances = np.full(ys.shape, np.inf)
         best_color_distances = np.full(ys.shape, np.iinfo(np.int32).max, dtype=np.int32)
-        nearest_y = np.zeros(ys.shape, dtype=np.int32)
-        nearest_x = np.zeros(xs.shape, dtype=np.int32)
 
         for color_index in sorted(int(value) for value in np.unique(color_labels[kept_mask])):
             source_mask = kept_mask & (color_labels == color_index)
-            distances, indices = ndimage.distance_transform_edt(~source_mask, return_indices=True)
+            distances, nearest_region_labels, nearest_color_labels = self._nearest_source_values(
+                source_mask, region_labels, color_labels
+            )
             candidate_distances = distances[ys, xs]
             candidate_color_distances = np.abs(old_colors - color_index).astype(np.int32)
             better = (candidate_distances < best_distances) | (
@@ -164,12 +163,37 @@ class ConnectedComponentRegionProcessor:
             )
             best_distances[better] = candidate_distances[better]
             best_color_distances[better] = candidate_color_distances[better]
-            nearest_y[better] = indices[0, ys[better], xs[better]]
-            nearest_x[better] = indices[1, ys[better], xs[better]]
+            region_labels[ys[better], xs[better]] = nearest_region_labels[ys[better], xs[better]]
+            color_labels[ys[better], xs[better]] = nearest_color_labels[ys[better], xs[better]]
 
-        region_labels[ys, xs] = region_labels[nearest_y, nearest_x]
-        color_labels[ys, xs] = color_labels[nearest_y, nearest_x]
         return True
+
+    @staticmethod
+    def _nearest_source_values(
+        source_mask: np.ndarray,
+        region_labels: np.ndarray,
+        color_labels: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        distances, labels = cv2.distanceTransformWithLabels(
+            (~source_mask).astype(np.uint8),
+            cv2.DIST_L2,
+            cv2.DIST_MASK_PRECISE,
+            labelType=cv2.DIST_LABEL_PIXEL,
+        )
+        source_y, source_x = np.nonzero(source_mask)
+        label_ids = labels[source_y, source_x]
+        order = np.argsort(label_ids, kind="stable")
+        sorted_label_ids = label_ids[order]
+        unique_label_ids, first_indices = np.unique(sorted_label_ids, return_index=True)
+        source_indices = order[first_indices]
+        max_label = int(labels.max())
+        nearest_regions_by_label = np.zeros(max_label + 1, dtype=region_labels.dtype)
+        nearest_colors_by_label = np.zeros(max_label + 1, dtype=color_labels.dtype)
+        nearest_y = source_y[source_indices]
+        nearest_x = source_x[source_indices]
+        nearest_regions_by_label[unique_label_ids] = region_labels[nearest_y, nearest_x]
+        nearest_colors_by_label[unique_label_ids] = color_labels[nearest_y, nearest_x]
+        return distances, nearest_regions_by_label[labels], nearest_colors_by_label[labels]
 
     def _region_table(self, region_labels: np.ndarray, color_labels: np.ndarray) -> list[Region]:
         ys, xs = np.nonzero(region_labels)
@@ -177,25 +201,36 @@ class ConnectedComponentRegionProcessor:
             return []
 
         ids = region_labels[ys, xs].astype(np.int32)
-        unique_ids, first_indices, counts = np.unique(ids, return_index=True, return_counts=True)
-        objects = ndimage.find_objects(region_labels)
-        color_indices = color_labels[ys[first_indices], xs[first_indices]]
+        order = np.argsort(ids, kind="stable")
+        sorted_ids = ids[order]
+        starts = np.r_[0, np.flatnonzero(np.diff(sorted_ids)) + 1]
+        unique_ids = sorted_ids[starts]
+        sorted_ys = ys[order]
+        sorted_xs = xs[order]
+        counts = np.diff(np.r_[starts, sorted_ids.size])
+        min_x = np.minimum.reduceat(sorted_xs, starts)
+        min_y = np.minimum.reduceat(sorted_ys, starts)
+        max_x = np.maximum.reduceat(sorted_xs, starts)
+        max_y = np.maximum.reduceat(sorted_ys, starts)
+        color_indices = color_labels[sorted_ys[starts], sorted_xs[starts]]
 
         return [
             Region(
                 id=int(region_id),
                 color_index=int(color_index),
                 area=int(area),
-                bbox=(int(box[1].start), int(box[0].start), int(box[1].stop), int(box[0].stop)),
+                bbox=(int(x1), int(y1), int(x2) + 1, int(y2) + 1),
             )
-            for region_id, color_index, area, box in zip(
+            for region_id, color_index, area, x1, y1, x2, y2 in zip(
                 unique_ids,
                 color_indices,
                 counts,
-                (objects[int(region_id) - 1] for region_id in unique_ids),
+                min_x,
+                min_y,
+                max_x,
+                max_y,
                 strict=True,
             )
-            if box is not None
         ]
 
     def _compact_regions(

@@ -72,8 +72,7 @@ paintify input.png \
 
 `paintify` runs a deterministic image-processing pipeline:
 
-1. The input image is loaded with Pillow, EXIF rotation is applied, and the image is converted to
-   RGB.
+1. The input image is loaded with OpenCV and converted to RGB.
 2. The image is resized so its longest side is at most `--max-size`. This controls the working
    resolution and has the biggest impact on speed and region detail.
 3. A Gaussian blur with radius `--smooth-radius` is applied. More blur removes noise and produces
