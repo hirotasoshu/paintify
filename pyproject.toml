@@ -29,10 +29,12 @@ paintify = "paintify.cli:app"
 
 [dependency-groups]
 dev = [
+  "flake8>=7.3.0",
   "prek>=0.2.0",
   "pytest>=7.4",
   "ruff>=0.4",
   "ty>=0.0.1a21",
+  "wemake-python-styleguide>=1.6.2",
 ]
 
 [tool.uv]

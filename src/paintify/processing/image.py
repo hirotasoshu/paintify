@@ -21,7 +21,7 @@ class OpenCvImageLoader:
         if scale < 1.0:
             image = cv2.resize(
                 image,
-                (int(width * scale), int(height * scale)),
+                (max(1, int(width * scale)), max(1, int(height * scale))),
                 interpolation=cv2.INTER_AREA,
             )
         if smooth_radius > 0:

@@ -62,9 +62,11 @@ def test_generator_orchestrates_collaborators_around_render_document(tmp_path: P
         def process(
             self,
             color_labels: np.ndarray,
+            lab_palette: np.ndarray,
             min_region_size: int,
             max_regions: int | None,
         ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
+            assert lab_palette.shape == (1, 3)
             assert (min_region_size, max_regions) == (1, 3)
             return np.ones((1, 1), dtype=np.int32), color_labels, [Region(1, 0, 1, (0, 0, 1, 1))]
 

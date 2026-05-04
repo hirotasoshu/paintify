@@ -7,6 +7,12 @@ import numpy as np
 from paintify.processing.regions import ConnectedComponentRegionProcessor
 
 
+def _lab_palette(size: int = 8) -> np.ndarray:
+    return np.stack(
+        [np.arange(size, dtype=np.float32) * 10, np.zeros(size), np.zeros(size)], axis=1
+    )
+
+
 def test_connected_components_splits_same_color_islands() -> None:
     labels = np.array([[0, 1, 0]], dtype=np.int32)
 
@@ -49,7 +55,7 @@ def test_tiny_region_merge_removes_small_neighbor_region() -> None:
     region_labels, _ = processor.connected_components(color_labels)
 
     merged_labels, merged_colors, regions = processor.merge_tiny_regions(
-        region_labels, color_labels, min_region_size=2
+        region_labels, color_labels, _lab_palette(2), min_region_size=2
     )
 
     assert len(regions) == 1
@@ -70,6 +76,7 @@ def test_process_removes_one_pixel_strips_before_building_regions() -> None:
 
     region_labels, merged_colors, regions = ConnectedComponentRegionProcessor().process(
         color_labels,
+        _lab_palette(2),
         min_region_size=1,
         max_regions=None,
     )
@@ -91,7 +98,9 @@ def test_tiny_region_merge_keeps_total_area_invariant() -> None:
     processor = ConnectedComponentRegionProcessor()
     region_labels, _ = processor.connected_components(color_labels)
 
-    _, _, regions = processor.merge_tiny_regions(region_labels, color_labels, min_region_size=3)
+    _, _, regions = processor.merge_tiny_regions(
+        region_labels, color_labels, _lab_palette(3), min_region_size=3
+    )
 
     assert sum(region.area for region in regions) == color_labels.size
     assert all(region.area >= 3 for region in regions)
@@ -110,7 +119,7 @@ def test_max_regions_merges_smallest_regions_and_compacts_ids() -> None:
     region_labels, _ = processor.connected_components(color_labels)
 
     merged_labels, merged_colors, regions = processor.enforce_max_regions(
-        region_labels, color_labels, max_regions=2
+        region_labels, color_labels, _lab_palette(4), max_regions=2
     )
 
     assert len(regions) == 2
@@ -136,6 +145,7 @@ def test_max_regions_uses_nearest_neighbor_color_tie_break() -> None:
     merged_labels, merged_colors, regions = ConnectedComponentRegionProcessor().enforce_max_regions(
         region_labels,
         color_labels,
+        _lab_palette(5),
         max_regions=3,
     )
 
@@ -151,12 +161,98 @@ def test_max_regions_prefers_color_distance_over_region_id_tie() -> None:
     merged_labels, merged_colors, regions = ConnectedComponentRegionProcessor().enforce_max_regions(
         region_labels,
         color_labels,
+        _lab_palette(5),
         max_regions=2,
     )
 
     assert len(regions) == 2
     assert int(merged_colors[0, 2]) == 2
     assert int(merged_labels[0, 2]) == int(merged_labels[0, 1])
+
+
+def test_removed_pixels_tie_break_by_palette_distance_not_color_index() -> None:
+    region_labels = np.array([[1, 1, 3, 2, 2]], dtype=np.int32)
+    color_labels = np.array([[0, 0, 1, 2, 2]], dtype=np.int32)
+    lab_palette = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [50.0, 0.0, 0.0],
+            [52.0, 0.0, 0.0],
+        ],
+        dtype=np.float32,
+    )
+
+    _, merged_colors, regions = ConnectedComponentRegionProcessor().enforce_max_regions(
+        region_labels,
+        color_labels,
+        lab_palette,
+        max_regions=2,
+    )
+
+    assert len(regions) == 2
+    assert int(merged_colors[0, 2]) == 2
+
+
+def test_max_regions_deletes_one_region_at_a_time() -> None:
+    region_labels = np.array([[1, 1, 3, 4, 2, 2, 5, 5]], dtype=np.int32)
+    color_labels = np.array([[0, 0, 3, 4, 2, 2, 5, 5]], dtype=np.int32)
+    lab_palette = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [10.0, 0.0, 0.0],
+            [20.0, 0.0, 0.0],
+            [30.0, 0.0, 0.0],
+            [31.0, 0.0, 0.0],
+            [80.0, 0.0, 0.0],
+        ],
+        dtype=np.float32,
+    )
+
+    _, merged_colors, regions = ConnectedComponentRegionProcessor().enforce_max_regions(
+        region_labels,
+        color_labels,
+        lab_palette,
+        max_regions=3,
+    )
+
+    assert len(regions) == 3
+    assert int(merged_colors[0, 2]) == 4
+    assert int(merged_colors[0, 3]) == 4
+
+
+def test_deleted_region_rebuilds_and_merges_same_color_neighbors() -> None:
+    region_labels = np.array([[1, 1, 3, 2, 2], [1, 1, 3, 2, 2]], dtype=np.int32)
+    color_labels = np.array([[0, 0, 1, 0, 0], [0, 0, 1, 0, 0]], dtype=np.int32)
+
+    merged_labels, merged_colors, regions = ConnectedComponentRegionProcessor().enforce_max_regions(
+        region_labels,
+        color_labels,
+        _lab_palette(2),
+        max_regions=2,
+    )
+
+    assert len(regions) == 1
+    assert int(merged_labels.max()) == 1
+    assert set(int(value) for value in merged_colors.ravel()) == {0}
+
+
+def test_one_by_one_region_cap_is_fast_on_grid() -> None:
+    y_indices, x_indices = np.indices((160, 160))
+    region_labels = (y_indices // 4 * 40 + x_indices // 4 + 1).astype(np.int32)
+    color_labels = (region_labels % 8).astype(np.int32)
+    lab_palette = _lab_palette(8)
+
+    start = time.perf_counter()
+    _, _, regions = ConnectedComponentRegionProcessor().enforce_max_regions(
+        region_labels,
+        color_labels,
+        lab_palette,
+        max_regions=1200,
+    )
+    elapsed = time.perf_counter() - start
+
+    assert len(regions) == 1200
+    assert elapsed < 0.75
 
 
 def test_tiny_region_pixels_are_reassigned_to_nearest_neighbor_regions() -> None:
@@ -180,6 +276,7 @@ def test_tiny_region_pixels_are_reassigned_to_nearest_neighbor_regions() -> None
     _, merged_colors, regions = ConnectedComponentRegionProcessor().merge_tiny_regions(
         region_labels,
         color_labels,
+        _lab_palette(3),
         min_region_size=7,
     )
 
@@ -195,6 +292,7 @@ def test_nearest_neighbor_merge_breaks_distance_ties_by_color_distance() -> None
     _, merged_colors, regions = ConnectedComponentRegionProcessor().merge_tiny_regions(
         region_labels,
         color_labels,
+        _lab_palette(3),
         min_region_size=3,
     )
 
@@ -209,6 +307,7 @@ def test_removed_regions_can_be_filled_from_nearest_kept_pixels_in_one_batch() -
     changed = ConnectedComponentRegionProcessor().fill_removed_regions_from_nearest_kept_pixels(
         region_labels,
         color_labels,
+        ConnectedComponentRegionProcessor._palette_distances(_lab_palette(6)),
         remove_ids={3, 4, 5},
     )
 

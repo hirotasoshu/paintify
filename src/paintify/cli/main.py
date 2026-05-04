@@ -77,5 +77,6 @@ def main(
     except (ImageInputError, ArtifactWriteError) as error:
         raise typer.BadParameter(str(error)) from error
     console.print(
-        f"[green]Wrote[/green] {result.output_dir} with {len(result.palette)} colors and {len(result.regions)} regions."
+        f"[green]Wrote[/green] {result.output_dir} "
+        f"with {len(result.palette)} colors and {len(result.regions)} regions."
     )

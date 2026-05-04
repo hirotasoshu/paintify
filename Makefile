@@ -20,6 +20,7 @@ format:
 
 check:
 	uv run ruff check src tests
+	uv run flake8 src tests
 	uv run ty check src tests
 	uv run pytest
 

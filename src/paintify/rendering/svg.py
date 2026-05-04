@@ -10,6 +10,7 @@ from paintify.models import LabelPlacement, OutputArtifact, PaintByNumbersDocume
 
 class SvgOutlineRenderer:
     artifact_name = "outline.svg"
+    scale = 6
 
     def render(self, config: PaintifyConfig, document: PaintByNumbersDocument) -> OutputArtifact:
         return OutputArtifact(
@@ -17,25 +18,44 @@ class SvgOutlineRenderer:
         )
 
     def _render_svg(self, region_labels: np.ndarray, labels: list[LabelPlacement]) -> str:
-        height, width = region_labels.shape
-        scale = 6
         lines = [
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width * scale}" height="{height * scale}" viewBox="0 0 {width} {height}">',
+            self._svg_header(region_labels),
             '<rect width="100%" height="100%" fill="white"/>',
             '<g stroke="black" stroke-width="0.08" fill="none" stroke-linecap="square">',
         ]
-        for x1, y1, x2, y2 in self._boundary_segments(region_labels):
-            lines.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>')
+        lines.extend(self._line_elements(region_labels))
         lines.append("</g>")
-        lines.append(
-            '<g font-family="Arial, sans-serif" font-size="1.8" text-anchor="middle" dominant-baseline="central" fill="black">'
-        )
-        for placement in labels:
-            lines.append(
-                f'<text x="{placement.x + 0.5}" y="{placement.y + 0.5}">{escape(str(placement.color_index + 1))}</text>'
-            )
-        lines.append("</g></svg>")
+        lines.extend(self._label_elements(labels))
         return "\n".join(lines)
+
+    def _svg_header(self, region_labels: np.ndarray) -> str:
+        height, width = region_labels.shape
+        scaled_width = width * self.scale
+        scaled_height = height * self.scale
+        return (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{scaled_width}" '
+            f'height="{scaled_height}" viewBox="0 0 {width} {height}">'
+        )
+
+    def _line_elements(self, region_labels: np.ndarray) -> list[str]:
+        return [
+            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}"/>'
+            for x1, y1, x2, y2 in self._boundary_segments(region_labels)
+        ]
+
+    def _label_elements(self, labels: list[LabelPlacement]) -> list[str]:
+        lines = [
+            '<g font-family="Arial, sans-serif" font-size="1.8" '
+            'text-anchor="middle" dominant-baseline="central" fill="black">'
+        ]
+        lines.extend(self._text_element(placement) for placement in labels)
+        lines.append("</g></svg>")
+        return lines
+
+    @staticmethod
+    def _text_element(placement: LabelPlacement) -> str:
+        text = escape(str(placement.color_index + 1))
+        return f'<text x="{placement.x + 0.5}" y="{placement.y + 0.5}">{text}</text>'
 
     @staticmethod
     def _boundary_segments(region_labels: np.ndarray) -> list[tuple[int, int, int, int]]:
