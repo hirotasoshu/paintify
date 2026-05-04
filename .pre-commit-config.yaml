@@ -23,6 +23,13 @@ repos:
         language: system
         types_or: [python, pyi]
 
+      - id: flake8
+        name: flake8
+        entry: uv run flake8 src tests
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+
       - id: ty-check
         name: ty check
         entry: uv run ty check src tests

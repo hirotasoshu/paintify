@@ -1,4 +1,4 @@
-.PHONY: setup hooks lint test typecheck format check build
+.PHONY: setup hooks lint test typecheck format build
 
 setup:
 	uv sync
@@ -8,6 +8,7 @@ hooks:
 
 lint:
 	uv run prek run --all-files --show-diff-on-failure --color=always
+	uv run pytest
 
 test:
 	uv run pytest
@@ -17,12 +18,6 @@ typecheck:
 
 format:
 	uv run ruff format src tests
-
-check:
-	uv run ruff check src tests
-	uv run flake8 src tests
-	uv run ty check src tests
-	uv run pytest
 
 build:
 	uv build

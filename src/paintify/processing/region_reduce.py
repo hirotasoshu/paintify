@@ -12,9 +12,7 @@ from paintify.processing.region_table import RegionMap
 
 class LocalRegionReducer:
     def __init__(self, region_map: RegionMap, fill_context: RegionFillContext) -> None:
-        self.region_map = RegionMap(
-            region_map.region_labels.copy(), region_map.color_labels.copy()
-        )
+        self.region_map = RegionMap(region_map.region_labels.copy(), region_map.color_labels.copy())
         self.fill_context = fill_context
         self.active = {region.id: region for region in self.region_map.regions()}
         self.heap = [(region.area, region.id) for region in self.active.values()]
@@ -128,9 +126,7 @@ class LocalRegionReducer:
             int(value) for value in np.unique(local_map.color_labels[affected_mask])
         ):
             rebuilt_regions.extend(
-                self._rebuild_color_components(
-                    local_map, affected_mask, color_index, bbox, next_id
-                )
+                self._rebuild_color_components(local_map, affected_mask, color_index, bbox, next_id)
             )
             if rebuilt_regions:
                 next_id = max(region.id for region in rebuilt_regions) + 1

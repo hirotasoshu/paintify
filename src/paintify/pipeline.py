@@ -33,15 +33,13 @@ from paintify.rendering import (
 
 
 class ImageLoader(Protocol):
-    def load(self, path: Path, max_size: int, smooth_radius: float) -> np.ndarray:
-        ...
+    def load(self, path: Path, max_size: int, smooth_radius: float) -> np.ndarray: ...
 
 
 class Quantizer(Protocol):
     def quantize(
         self, image: np.ndarray, max_colors: int, seed: int, starter_palette: str | None
-    ) -> tuple[np.ndarray, np.ndarray]:
-        ...
+    ) -> tuple[np.ndarray, np.ndarray]: ...
 
 
 class RegionProcessor(Protocol):
@@ -51,32 +49,27 @@ class RegionProcessor(Protocol):
         lab_palette: np.ndarray,
         min_region_size: int,
         max_regions: int | None,
-    ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
-        ...
+    ) -> tuple[np.ndarray, np.ndarray, list[Region]]: ...
 
 
 class PaletteBuilder(Protocol):
     def build(
         self, color_labels: np.ndarray, lab_palette: np.ndarray, regions: list[Region]
-    ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
-        ...
+    ) -> tuple[np.ndarray, np.ndarray, list[Region]]: ...
 
 
 class LabelPlacer(Protocol):
-    def place(self, region_labels: np.ndarray, regions: list[Region]) -> list[LabelPlacement]:
-        ...
+    def place(self, region_labels: np.ndarray, regions: list[Region]) -> list[LabelPlacement]: ...
 
 
 class Renderer(Protocol):
     def render(
         self, config: PaintifyConfig, document: PaintByNumbersDocument
-    ) -> OutputArtifact:
-        ...
+    ) -> OutputArtifact: ...
 
 
 class ArtifactWriter(Protocol):
-    def write(self, output_dir: Path, bundle: OutputBundle) -> None:
-        ...
+    def write(self, output_dir: Path, bundle: OutputBundle) -> None: ...
 
 
 @dataclass(frozen=True)
