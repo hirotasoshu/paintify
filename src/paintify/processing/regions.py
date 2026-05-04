@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 
+import cv2
 import numpy as np
 from scipy import ndimage  # type: ignore[import-untyped]
 
@@ -57,14 +58,15 @@ class ConnectedComponentRegionProcessor:
     def connected_components(self, color_labels: np.ndarray) -> tuple[np.ndarray, list[Region]]:
         next_id = 1
         region_labels = np.zeros_like(color_labels, dtype=np.int32)
-        structure = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.uint8)
         for color_index in sorted(int(value) for value in np.unique(color_labels)):
-            labeled, count = ndimage.label(color_labels == color_index, structure=structure)
-            if count == 0:
+            count, labeled = cv2.connectedComponents(
+                (color_labels == color_index).astype(np.uint8), connectivity=4
+            )
+            if count <= 1:
                 continue
             mask = labeled != 0
             region_labels[mask] = labeled[mask] + next_id - 1
-            next_id += int(count)
+            next_id += int(count) - 1
         return region_labels, self._region_table(region_labels, color_labels)
 
     def merge_tiny_regions(

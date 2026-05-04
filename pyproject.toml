@@ -24,6 +24,7 @@ dependencies = [
   "scipy>=1.11.4",
   "scikit-image>=0.22",
   "typer>=0.9",
+  "opencv-python-headless>=4.13.0.92",
 ]
 
 [project.scripts]
