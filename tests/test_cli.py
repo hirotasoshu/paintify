@@ -58,6 +58,18 @@ def test_cli_reports_clean_error_for_non_image_input(tmp_path: Path) -> None:
     assert "UnidentifiedImageError" not in result.output
 
 
+def test_cli_reports_clean_error_for_unknown_starter_palette(tmp_path: Path) -> None:
+    image_path = tmp_path / "input.png"
+    image = np.full((8, 8, 3), (255, 0, 0), dtype=np.uint8)
+    _write_rgb_image(image_path, image)
+
+    result = CliRunner().invoke(app, [str(image_path), "--starter-palette", "bogus"])
+
+    assert result.exit_code != 0
+    assert "unknown starter palette" in result.output
+    assert "Traceback" not in result.output
+
+
 def test_cli_reports_clean_error_when_output_path_is_file(tmp_path: Path) -> None:
     image_path = tmp_path / "input.png"
     output_path = tmp_path / "out-file"

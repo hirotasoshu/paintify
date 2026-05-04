@@ -3,50 +3,47 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
+from paintify.processing.region_table import RegionMap
 
-class RegionFiller:
+
+class RegionFillContext:
+    def __init__(self, lab_palette: np.ndarray) -> None:
+        self.color_distances = self._palette_distances(lab_palette)
+
     @staticmethod
-    def palette_distances(lab_palette: np.ndarray) -> np.ndarray:
+    def _palette_distances(lab_palette: np.ndarray) -> np.ndarray:
         palette = lab_palette.astype(np.float32, copy=False)
         diff = palette[:, None, :] - palette[None, :, :]
         return np.linalg.norm(diff, axis=2)
 
     def fill_removed_regions_from_nearest_kept_pixels(
         self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        color_distances: np.ndarray,
+        region_map: RegionMap,
         remove_ids: set[int],
     ) -> bool:
         if not remove_ids:
             return False
 
-        remove_mask = np.isin(region_labels, list(remove_ids))
-        kept_mask = (region_labels != 0) & ~remove_mask
+        remove_mask = np.isin(region_map.region_labels, list(remove_ids))
+        kept_mask = (region_map.region_labels != 0) & ~remove_mask
         return self.fill_removed_mask_from_sources(
-            region_labels,
-            color_labels,
+            region_map,
             remove_mask,
             kept_mask,
-            color_distances,
         )
 
     def fill_removed_mask_from_sources(
         self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
+        region_map: RegionMap,
         remove_mask: np.ndarray,
         source_mask: np.ndarray,
-        color_distances: np.ndarray,
     ) -> bool:
         ys, xs = np.nonzero(remove_mask)
         if ys.size == 0 or not bool(np.any(source_mask)):
             return False
 
         self._fill_removed_points(
-            region_labels,
-            color_labels,
-            color_distances,
+            region_map,
             source_mask,
             ys,
             xs,
@@ -55,13 +52,13 @@ class RegionFiller:
 
     def _fill_removed_points(
         self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        color_distances: np.ndarray,
+        region_map: RegionMap,
         source_mask: np.ndarray,
         ys: np.ndarray,
         xs: np.ndarray,
     ) -> None:
+        region_labels = region_map.region_labels
+        color_labels = region_map.color_labels
         old_colors = color_labels[ys, xs]
         best_distances = np.full(ys.shape, np.inf)
         best_color_distances = np.full(ys.shape, np.inf, dtype=np.float32)
@@ -72,7 +69,7 @@ class RegionFiller:
                 candidate_source, region_labels, color_labels
             )
             candidate_distances = distances[ys, xs]
-            candidate_color_distances = color_distances[old_colors, color_index]
+            candidate_color_distances = self.color_distances[old_colors, color_index]
             better = (candidate_distances < best_distances) | (
                 (candidate_distances == best_distances)
                 & (candidate_color_distances < best_color_distances)

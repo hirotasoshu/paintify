@@ -15,6 +15,7 @@ class _Unset:
 
 
 UNSET: Final = _Unset()
+STARTER_PALETTES: Final = frozenset(("basic",))
 
 
 @dataclass(frozen=True)
@@ -211,6 +212,8 @@ class SettingsResolver:
     def _as_optional_str(cls, value: object, name: str) -> str | None:
         if value is not None and not isinstance(value, str):
             raise SettingsError(f"{name} must be a string or None")
+        if name == "starter_palette" and value is not None and value not in STARTER_PALETTES:
+            raise SettingsError(f"unknown starter palette: {value}")
         return value
 
     @classmethod

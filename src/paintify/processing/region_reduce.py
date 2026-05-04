@@ -6,200 +6,155 @@ import cv2
 import numpy as np
 
 from paintify.models import Region
-from paintify.processing.region_fill import RegionFiller
-from paintify.processing.region_table import RegionTopology
+from paintify.processing.region_fill import RegionFillContext
+from paintify.processing.region_table import RegionMap
 
 
 class LocalRegionReducer:
-    def __init__(self, filler: RegionFiller | None = None) -> None:
-        self._filler = filler or RegionFiller()
+    def __init__(self, region_map: RegionMap, fill_context: RegionFillContext) -> None:
+        self.region_map = RegionMap(
+            region_map.region_labels.copy(), region_map.color_labels.copy()
+        )
+        self.fill_context = fill_context
+        self.active = {region.id: region for region in self.region_map.regions()}
+        self.heap = [(region.area, region.id) for region in self.active.values()]
+        heapq.heapify(self.heap)
 
-    def enforce_max_regions(
+    def reduce_to(
         self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        lab_palette: np.ndarray,
         max_regions: int,
         max_iterations: int = 100_000,
     ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
         if max_regions < 1:
             raise ValueError("max_regions must be positive")
 
-        merged_regions = region_labels.copy()
-        merged_colors = color_labels.copy()
-        color_distances = self._filler.palette_distances(lab_palette)
-        active = {
-            region.id: region for region in RegionTopology.table(merged_regions, merged_colors)
-        }
-        heap = [(region.area, region.id) for region in active.values()]
-        heapq.heapify(heap)
-
         for _ in range(max_iterations):
-            if len(active) <= max_regions or len(active) <= 1:
+            if len(self.active) <= max_regions or len(self.active) <= 1:
                 break
-            if not self._reduce_one(merged_regions, merged_colors, color_distances, active, heap):
+            if not self._reduce_one():
                 break
-        return RegionTopology.compact(merged_regions, merged_colors)
+        if len(self.active) > max_regions:
+            raise RuntimeError(
+                f"could not reduce regions to {max_regions} within {max_iterations} iterations"
+            )
+        return self.region_map.compact()
 
-    def _reduce_one(
-        self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        color_distances: np.ndarray,
-        active: dict[int, Region],
-        heap: list[tuple[int, int]],
-    ) -> bool:
-        region = self._pop_current_smallest(heap, active)
+    def _reduce_one(self) -> bool:
+        region = self._pop_current_smallest()
         if region is None:
             return False
 
-        rebuilt_regions = self._delete_region_locally(
-            region_labels,
-            color_labels,
-            color_distances,
-            region,
-            active,
-        )
+        rebuilt_regions = self._delete_region_locally(region)
         for rebuilt_region in rebuilt_regions:
-            heapq.heappush(heap, (rebuilt_region.area, rebuilt_region.id))
+            heapq.heappush(self.heap, (rebuilt_region.area, rebuilt_region.id))
         return bool(rebuilt_regions)
 
-    @staticmethod
-    def _pop_current_smallest(
-        heap: list[tuple[int, int]], active: dict[int, Region]
-    ) -> Region | None:
-        while heap:
-            area, region_id = heapq.heappop(heap)
-            region = active.get(region_id)
+    def _pop_current_smallest(self) -> Region | None:
+        while self.heap:
+            area, region_id = heapq.heappop(self.heap)
+            region = self.active.get(region_id)
             if region is not None and region.area == area:
                 return region
         return None
 
-    def _delete_region_locally(
-        self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        color_distances: np.ndarray,
-        region: Region,
-        active: dict[int, Region],
-    ) -> list[Region]:
-        neighbors = self._neighbors_for_region(region_labels, region.id, region.bbox)
+    def _delete_region_locally(self, region: Region) -> list[Region]:
+        neighbors = self._neighbors_for_region(region.id, region.bbox)
         if not neighbors:
             return []
 
-        window = RegionTopology.padded_bbox(region.bbox, region_labels.shape)
-        local_regions, local_colors = self._local_views(region_labels, color_labels, window)
-        remove_mask = local_regions == region.id
-        source_mask = np.isin(local_regions, list(neighbors & active.keys()))
-        changed = self._filler.fill_removed_mask_from_sources(
-            local_regions,
-            local_colors,
+        window = RegionMap.padded_bbox(region.bbox, self.region_map.region_labels.shape)
+        local_map = self.region_map.window(window)
+        remove_mask = local_map.region_labels == region.id
+        source_mask = np.isin(local_map.region_labels, list(neighbors & self.active.keys()))
+        changed = self.fill_context.fill_removed_mask_from_sources(
+            local_map,
             remove_mask,
             source_mask,
-            color_distances,
         )
         if not changed:
             return []
 
-        affected_ids = {region.id} | (neighbors & active.keys())
-        return self._rebuild_affected_regions(region_labels, color_labels, active, affected_ids)
+        affected_ids = {region.id} | (neighbors & self.active.keys())
+        return self._rebuild_affected_regions(affected_ids)
 
-    def _rebuild_affected_regions(
-        self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        active: dict[int, Region],
-        affected_ids: set[int],
-    ) -> list[Region]:
-        affected_regions = [active[region_id] for region_id in affected_ids if region_id in active]
+    def _rebuild_affected_regions(self, affected_ids: set[int]) -> list[Region]:
+        affected_regions = [
+            self.active[region_id] for region_id in affected_ids if region_id in self.active
+        ]
         if not affected_regions:
             return []
 
         bbox = self._affected_bbox(affected_regions)
-        local_regions, local_colors = self._local_views(region_labels, color_labels, bbox)
-        affected_mask = np.isin(local_regions, list(affected_ids))
+        local_map = self.region_map.window(bbox)
+        affected_mask = np.isin(local_map.region_labels, list(affected_ids))
         if not bool(np.any(affected_mask)):
             return []
 
-        self._remove_active_regions(active, affected_ids)
-        local_regions[affected_mask] = 0
-        return self._rebuild_components(local_regions, local_colors, affected_mask, active, bbox)
+        self._remove_active_regions(affected_ids)
+        local_map.region_labels[affected_mask] = 0
+        return self._rebuild_components(local_map, affected_mask, bbox)
 
     def _neighbors_for_region(
         self,
-        region_labels: np.ndarray,
         region_id: int,
         bbox: tuple[int, int, int, int],
     ) -> set[int]:
-        x1, y1, x2, y2 = RegionTopology.padded_bbox(bbox, region_labels.shape)
-        local = region_labels[y1:y2, x1:x2]
-        neighbors = set(RegionTopology.neighbors(local, region_id))
+        window = RegionMap.padded_bbox(bbox, self.region_map.region_labels.shape)
+        neighbors = set(self.region_map.window(window).neighbor_counts(region_id))
         neighbors.discard(region_id)
         neighbors.discard(0)
         return neighbors
 
     @staticmethod
-    def _local_views(
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        bbox: tuple[int, int, int, int],
-    ) -> tuple[np.ndarray, np.ndarray]:
-        x1, y1, x2, y2 = bbox
-        return region_labels[y1:y2, x1:x2], color_labels[y1:y2, x1:x2]
-
-    @staticmethod
     def _affected_bbox(regions: list[Region]) -> tuple[int, int, int, int]:
         bbox = regions[0].bbox
         for region in regions[1:]:
-            bbox = RegionTopology.union_bboxes(bbox, region.bbox)
+            bbox = RegionMap.union_bboxes(bbox, region.bbox)
         return bbox
 
-    @staticmethod
-    def _remove_active_regions(active: dict[int, Region], affected_ids: set[int]) -> None:
+    def _remove_active_regions(self, affected_ids: set[int]) -> None:
         for region_id in affected_ids:
-            active.pop(region_id, None)
+            self.active.pop(region_id, None)
 
     def _rebuild_components(
         self,
-        local_regions: np.ndarray,
-        local_colors: np.ndarray,
+        local_map: RegionMap,
         affected_mask: np.ndarray,
-        active: dict[int, Region],
         bbox: tuple[int, int, int, int],
     ) -> list[Region]:
-        next_id = int(max(active, default=0)) + 1
+        next_id = int(max(self.active, default=0)) + 1
         rebuilt_regions: list[Region] = []
-        for color_index in sorted(int(value) for value in np.unique(local_colors[affected_mask])):
+        for color_index in sorted(
+            int(value) for value in np.unique(local_map.color_labels[affected_mask])
+        ):
             rebuilt_regions.extend(
                 self._rebuild_color_components(
-                    local_regions, local_colors, affected_mask, color_index, active, bbox, next_id
+                    local_map, affected_mask, color_index, bbox, next_id
                 )
             )
             if rebuilt_regions:
                 next_id = max(region.id for region in rebuilt_regions) + 1
         return rebuilt_regions
 
-    @staticmethod
     def _rebuild_color_components(
-        local_regions: np.ndarray,
-        local_colors: np.ndarray,
+        self,
+        local_map: RegionMap,
         affected_mask: np.ndarray,
         color_index: int,
-        active: dict[int, Region],
         bbox: tuple[int, int, int, int],
         next_id: int,
     ) -> list[Region]:
+        local_regions = local_map.region_labels
+        local_colors = local_map.color_labels
         count, labeled = cv2.connectedComponents(
             (affected_mask & (local_colors == color_index)).astype(np.uint8),
             connectivity=4,
         )
         regions: list[Region] = []
         for component_id in range(1, int(count)):
-            region = LocalRegionReducer._component_region(
-                labeled, component_id, color_index, bbox, next_id
-            )
+            region = self._component_region(labeled, component_id, color_index, bbox, next_id)
             local_regions[labeled == component_id] = region.id
-            active[region.id] = region
+            self.active[region.id] = region
             regions.append(region)
             next_id += 1
         return regions

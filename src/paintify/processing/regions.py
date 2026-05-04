@@ -4,17 +4,13 @@ import cv2
 import numpy as np
 
 from paintify.models import Region
-from paintify.processing.region_fill import RegionFiller
+from paintify.processing.region_fill import RegionFillContext
 from paintify.processing.region_reduce import LocalRegionReducer
-from paintify.processing.region_table import RegionTopology
+from paintify.processing.region_table import RegionMap
 
 
 class ConnectedComponentRegionProcessor:
     narrow_strip_cleanup_runs = 3
-
-    def __init__(self) -> None:
-        self._filler = RegionFiller()
-        self._max_region_reducer = LocalRegionReducer(self._filler)
 
     def process(
         self,
@@ -58,7 +54,7 @@ class ConnectedComponentRegionProcessor:
             mask = labeled != 0
             region_labels[mask] = labeled[mask] + next_id - 1
             next_id += int(count) - 1
-        return region_labels, self._region_table(region_labels, color_labels)
+        return region_labels, RegionMap(region_labels, color_labels).regions()
 
     def merge_tiny_regions(
         self,
@@ -70,19 +66,20 @@ class ConnectedComponentRegionProcessor:
     ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
         merged_regions = region_labels.copy()
         merged_colors = color_labels.copy()
-        color_distances = self._palette_distances(lab_palette)
+        fill_context = RegionFillContext(lab_palette)
         for _ in range(max_iterations):
-            regions = self._region_table(merged_regions, merged_colors)
+            region_map = RegionMap(merged_regions, merged_colors)
+            regions = region_map.regions()
             tiny = [region for region in regions if region.area < min_region_size]
             if not tiny or len(regions) <= 1:
                 break
-            changed = self._merge_regions_once(merged_regions, merged_colors, color_distances, tiny)
+            changed = fill_context.fill_removed_regions_from_nearest_kept_pixels(
+                region_map, {region.id for region in tiny}
+            )
             if not changed:
                 break
-            merged_regions, merged_colors, regions = self._compact_regions(
-                merged_regions, merged_colors
-            )
-        return self._compact_regions(merged_regions, merged_colors)
+            merged_regions, merged_colors, regions = region_map.compact()
+        return RegionMap(merged_regions, merged_colors).compact()
 
     def enforce_max_regions(
         self,
@@ -92,26 +89,11 @@ class ConnectedComponentRegionProcessor:
         max_regions: int,
         max_iterations: int = 100_000,
     ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
-        return self._max_region_reducer.enforce_max_regions(
-            region_labels,
-            color_labels,
-            lab_palette,
+        return LocalRegionReducer(
+            RegionMap(region_labels, color_labels), RegionFillContext(lab_palette)
+        ).reduce_to(
             max_regions,
             max_iterations,
-        )
-
-    def fill_removed_regions_from_nearest_kept_pixels(
-        self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        color_distances: np.ndarray,
-        remove_ids: set[int],
-    ) -> bool:
-        return self._filler.fill_removed_regions_from_nearest_kept_pixels(
-            region_labels,
-            color_labels,
-            color_distances,
-            remove_ids,
         )
 
     @staticmethod
@@ -140,33 +122,3 @@ class ConnectedComponentRegionProcessor:
         bottom = color_labels[2:, :]
         vertical = (top == bottom) & (current != top)
         next_labels[1:-1, :][vertical] = top[vertical]
-
-    def _merge_regions_once(
-        self,
-        region_labels: np.ndarray,
-        color_labels: np.ndarray,
-        color_distances: np.ndarray,
-        regions_to_remove: list[Region],
-    ) -> bool:
-        remove_ids = {region.id for region in regions_to_remove}
-        return self.fill_removed_regions_from_nearest_kept_pixels(
-            region_labels, color_labels, color_distances, remove_ids
-        )
-
-    @staticmethod
-    def _palette_distances(lab_palette: np.ndarray) -> np.ndarray:
-        return RegionFiller.palette_distances(lab_palette)
-
-    @staticmethod
-    def _region_table(region_labels: np.ndarray, color_labels: np.ndarray) -> list[Region]:
-        return RegionTopology.table(region_labels, color_labels)
-
-    @staticmethod
-    def _compact_regions(
-        region_labels: np.ndarray, color_labels: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray, list[Region]]:
-        return RegionTopology.compact(region_labels, color_labels)
-
-    @staticmethod
-    def _neighbor_counts(region_labels: np.ndarray, region_id: int):
-        return RegionTopology.neighbors(region_labels, region_id)

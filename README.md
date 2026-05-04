@@ -84,12 +84,14 @@ paintify input.png \
    perception better than raw RGB distances.
 6. If `--starter-palette basic` is used, each generated color is snapped to the nearest color from a
    small built-in starter paint palette.
-7. Adjacent pixels with the same palette color are split into connected regions.
-8. Thin one-pixel strips are cleaned up, small regions below `--min-region-size` are merged into
-   nearby kept regions, and `--max-regions` limits the final amount of regions.
-9. Label positions are placed near the safest inner point of each region by measuring distance from
+7. Thin one-pixel strips are cleaned up before region construction.
+8. Adjacent pixels with the same palette color are split into connected regions.
+9. Small regions below `--min-region-size` are merged into nearby kept regions. If the result still
+   has more than `--max-regions`, the smallest regions are removed one at a time and reassigned to
+   neighbouring regions with palette-distance tie-breaking.
+10. Label positions are placed near the safest inner point of each region by measuring distance from
    the region boundary.
-10. The final document is rendered as SVG, PNG, and JSON artifacts.
+11. The final document is rendered as SVG, PNG, and JSON artifacts.
 
 The same input, settings, and seed should produce the same output.
 
@@ -144,6 +146,7 @@ metadata, and label positions:
 
 ```json
 {
+  "input": "input.png",
   "difficulty": "easy",
   "seed": 42,
   "settings": {
@@ -154,6 +157,8 @@ metadata, and label positions:
     "starter_palette": null,
     "max_regions": 300
   },
+  "image_size": {"width": 768, "height": 512},
+  "artifacts": ["outline.svg", "preview.png", "palette.json", "manifest.json"],
   "palette": [
     {"index": 1, "hex": "#f2d7b6", "rgb": [242, 215, 182]}
   ],
@@ -201,6 +206,7 @@ To run individual checks:
 
 ```bash
 uv run ruff check src tests
+uv run flake8 src tests
 uv run ty check src tests
 uv run pytest
 ```
@@ -218,6 +224,7 @@ The code is organized by responsibility rather than generic architecture layers:
 - `cli/` owns the Typer command entrypoint.
 - `config/` owns generation settings, preset resolution, and validation.
 - `processing/` owns image loading, color quantization, palette logic, region processing, and label
-  placement.
+  placement. Region processing is split into table/compaction, fill, and local reduction helpers to
+  keep the reducer readable.
 - `rendering/` owns SVG, PNG, JSON rendering, and artifact writing.
 - `pipeline.py` wires the processing and rendering components into the generator.
