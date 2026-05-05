@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import cv2
@@ -11,20 +12,28 @@ from paintify.cli import app
 from paintify.config import SettingsResolver
 
 
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
 def _write_rgb_image(path: Path, rgb: np.ndarray) -> None:
     assert cv2.imwrite(str(path), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+
+
+def _plain_output(output: str) -> str:
+    return ANSI_ESCAPE.sub("", output)
 
 
 def test_cli_help_lists_core_options() -> None:
     result = CliRunner().invoke(app, ["--help"])
 
     assert result.exit_code == 0
-    assert "Generate paint-by-numbers" in result.output
-    assert "--difficulty" in result.output
-    assert "--colors" in result.output
-    assert "--smooth-radius" in result.output
-    assert "--max-regions" in result.output
-    assert "--no-preset" in result.output
+    output = _plain_output(result.output)
+    assert "Generate paint-by-numbers" in output
+    assert "--difficulty" in output
+    assert "--colors" in output
+    assert "--smooth-radius" in output
+    assert "--max-regions" in output
+    assert "--no-preset" in output
 
 
 def test_preset_names_are_stable() -> None:
@@ -44,7 +53,7 @@ def test_cli_no_preset_reports_missing_manual_values(tmp_path: Path) -> None:
     result = CliRunner().invoke(app, [str(image_path), "--no-preset"])
 
     assert result.exit_code != 0
-    assert "max_colors is required when --no-preset is used" in result.output
+    assert "max_colors is required when --no-preset is used" in _plain_output(result.output)
 
 
 def test_cli_reports_clean_error_for_non_image_input(tmp_path: Path) -> None:
