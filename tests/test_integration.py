@@ -8,8 +8,8 @@ import numpy as np
 from typer.testing import CliRunner
 
 from paintify.cli import app
+from paintify.cli.factory import create_paintify_generator
 from paintify.config import PaintifyConfig
-from paintify.pipeline import run_pipeline
 
 
 def _write_rgb_image(path: Path, rgb: np.ndarray) -> None:
@@ -164,7 +164,7 @@ def test_palette_output_is_compacted_after_region_merge(tmp_path: Path) -> None:
         max_regions=64,
         seed=0,
     )
-    result = run_pipeline(config)
+    result = create_paintify_generator().generate(config)
 
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     palette = json.loads((output_dir / "palette.json").read_text(encoding="utf-8"))

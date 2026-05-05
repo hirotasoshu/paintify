@@ -15,21 +15,6 @@ from paintify.models import (
     PaletteEntry,
     Region,
 )
-from paintify.processing import (
-    CompactingPaletteBuilder,
-    ConnectedComponentRegionProcessor,
-    DistanceTransformLabelPlacer,
-    KMeansQuantizer,
-    OpenCvImageLoader,
-)
-from paintify.processing.palette import PaletteEntryBuilder
-from paintify.rendering import (
-    FilesystemArtifactWriter,
-    ManifestJsonRenderer,
-    PaletteJsonRenderer,
-    PngPreviewRenderer,
-    SvgOutlineRenderer,
-)
 
 
 class ImageLoader(Protocol):
@@ -56,6 +41,10 @@ class PaletteBuilder(Protocol):
     def build(
         self, color_labels: np.ndarray, lab_palette: np.ndarray, regions: list[Region]
     ) -> tuple[np.ndarray, np.ndarray, list[Region]]: ...
+
+
+class PaletteEntryBuilderProtocol(Protocol):
+    def build(self, lab_colors: np.ndarray) -> list[PaletteEntry]: ...
 
 
 class LabelPlacer(Protocol):
@@ -97,6 +86,7 @@ class PaintifyGenerator:
         quantizer: Quantizer,
         region_processor: RegionProcessor,
         palette_builder: PaletteBuilder,
+        palette_entry_builder: PaletteEntryBuilderProtocol,
         label_placer: LabelPlacer,
         renderers: list[Renderer],
         artifact_writer: ArtifactWriter,
@@ -105,6 +95,7 @@ class PaintifyGenerator:
         self._quantizer = quantizer
         self._region_processor = region_processor
         self._palette_builder = palette_builder
+        self._palette_entry_builder = palette_entry_builder
         self._label_placer = label_placer
         self._renderers = renderers
         self._artifact_writer = artifact_writer
@@ -121,7 +112,7 @@ class PaintifyGenerator:
         color_labels, lab_palette, regions = self._palette_builder.build(
             color_labels, lab_palette, regions
         )
-        palette = PaletteEntryBuilder().build(lab_palette)
+        palette = self._palette_entry_builder.build(lab_palette)
         document = PaintByNumbersDocument(
             color_labels=color_labels,
             region_labels=region_labels,
@@ -135,32 +126,3 @@ class PaintifyGenerator:
         )
         self._artifact_writer.write(config.output_dir, bundle)
         return GenerationResult(output_dir=config.output_dir, document=document)
-
-
-class PaintifyPipeline:
-    def run(self, config: PaintifyConfig) -> GenerationResult:
-        return create_paintify_generator().generate(config)
-
-
-def create_paintify_generator() -> PaintifyGenerator:
-    return PaintifyGenerator(
-        image_loader=OpenCvImageLoader(),
-        quantizer=KMeansQuantizer(),
-        region_processor=ConnectedComponentRegionProcessor(),
-        palette_builder=CompactingPaletteBuilder(),
-        label_placer=DistanceTransformLabelPlacer(),
-        renderers=[
-            SvgOutlineRenderer(),
-            PngPreviewRenderer(),
-            PaletteJsonRenderer(),
-            ManifestJsonRenderer(),
-        ],
-        artifact_writer=FilesystemArtifactWriter(),
-    )
-
-
-def run_pipeline(config: PaintifyConfig) -> GenerationResult:
-    return PaintifyPipeline().run(config)
-
-
-PipelineResult = GenerationResult

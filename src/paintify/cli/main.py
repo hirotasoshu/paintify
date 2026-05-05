@@ -5,8 +5,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
+from paintify.cli.factory import create_paintify_generator
 from paintify.config import PaintifyOptions, SettingsError, SettingsOverrides, SettingsResolver
-from paintify.pipeline import create_paintify_generator
 from paintify.processing.image import ImageInputError
 from paintify.rendering import ArtifactWriteError
 
