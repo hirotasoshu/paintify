@@ -9,13 +9,10 @@ from paintify.processing import (
     OpenCvImageLoader,
 )
 from paintify.processing.palette import PaletteEntryBuilder
-from paintify.rendering import (
-    FilesystemArtifactWriter,
-    ManifestJsonRenderer,
-    PaletteJsonRenderer,
-    PngPreviewRenderer,
-    SvgOutlineRenderer,
-)
+from paintify.rendering.json import ManifestJsonRenderer, PaletteJsonRenderer
+from paintify.rendering.png import PngPreviewRenderer
+from paintify.rendering.svg import SvgOutlineRenderer
+from paintify.rendering.writer import FilesystemArtifactWriter
 
 
 def create_paintify_generator() -> PaintifyGenerator:
