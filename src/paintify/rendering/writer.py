@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from paintify.models import OutputBundle
+from paintify.rendering.artifacts import OutputBundle
 
 
 class ArtifactWriteError(RuntimeError):

@@ -7,14 +7,24 @@ from typing import Protocol
 import numpy as np
 
 from paintify.config import PaintifyConfig
-from paintify.models import (
-    LabelPlacement,
-    OutputArtifact,
-    OutputBundle,
-    PaintByNumbersDocument,
-    PaletteEntry,
-    Region,
-)
+from paintify.processing.labels import LabelPlacement
+from paintify.processing.palette import PaletteEntry
+from paintify.processing.region_table import Region
+from paintify.rendering.artifacts import OutputArtifact, OutputBundle
+
+
+@dataclass(frozen=True)
+class PaintByNumbersDocument:
+    color_labels: np.ndarray
+    region_labels: np.ndarray
+    palette: list[PaletteEntry]
+    regions: list[Region]
+    labels: list[LabelPlacement]
+
+    @property
+    def image_size(self) -> tuple[int, int]:
+        height, width = self.color_labels.shape
+        return width, height
 
 
 class ImageLoader(Protocol):

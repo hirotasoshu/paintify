@@ -1,13 +1,9 @@
-from paintify.rendering.json import ManifestJsonRenderer, PaletteJsonRenderer
-from paintify.rendering.png import PngPreviewRenderer
-from paintify.rendering.svg import SvgOutlineRenderer
+from paintify.rendering.artifacts import OutputArtifact, OutputBundle
 from paintify.rendering.writer import ArtifactWriteError, FilesystemArtifactWriter
 
 __all__ = [
     "ArtifactWriteError",
     "FilesystemArtifactWriter",
-    "ManifestJsonRenderer",
-    "PaletteJsonRenderer",
-    "PngPreviewRenderer",
-    "SvgOutlineRenderer",
+    "OutputArtifact",
+    "OutputBundle",
 ]

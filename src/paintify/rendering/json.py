@@ -4,13 +4,11 @@ import json
 from typing import Any
 
 from paintify.config import PaintifyConfig
-from paintify.models import (
-    LabelPlacement,
-    OutputArtifact,
-    PaintByNumbersDocument,
-    PaletteEntry,
-    Region,
-)
+from paintify.pipeline import PaintByNumbersDocument
+from paintify.processing.labels import LabelPlacement
+from paintify.processing.palette import PaletteEntry
+from paintify.processing.region_table import Region
+from paintify.rendering.artifacts import OutputArtifact
 
 
 class PaletteJsonRenderer:

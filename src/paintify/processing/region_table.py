@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import dataclass
 
 import numpy as np
 
-from paintify.models import Region
+
+@dataclass(frozen=True)
+class Region:
+    id: int
+    color_index: int
+    area: int
+    bbox: tuple[int, int, int, int]
 
 
 class RegionMap:

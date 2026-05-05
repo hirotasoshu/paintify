@@ -1,14 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import ClassVar
 
 import numpy as np
 
-from paintify.models import PaletteEntry, Region
 from paintify.processing.color import lab_to_rgb, rgb_to_lab
+from paintify.processing.region_table import Region
 
 PaletteMap = dict[str, list[str]]
+
+
+@dataclass(frozen=True)
+class PaletteEntry:
+    index: int
+    hex: str
+    rgb: tuple[int, int, int]
+
+    @classmethod
+    def from_rgb(cls, index: int, rgb: tuple[int, int, int]) -> PaletteEntry:
+        return cls(index=index, hex=cls._rgb_to_hex(rgb), rgb=rgb)
+
+    @staticmethod
+    def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
+        return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
 class StarterPalette:

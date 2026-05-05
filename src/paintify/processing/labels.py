@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
 
-from paintify.models import LabelPlacement, Region
+from paintify.processing.region_table import Region
+
+
+@dataclass(frozen=True)
+class LabelPlacement:
+    region_id: int
+    color_index: int
+    x: int
+    y: int
 
 
 class DistanceTransformLabelPlacer:

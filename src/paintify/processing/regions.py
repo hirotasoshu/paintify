@@ -3,10 +3,9 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from paintify.models import Region
 from paintify.processing.region_fill import RegionFillContext
 from paintify.processing.region_reduce import LocalRegionReducer
-from paintify.processing.region_table import RegionMap
+from paintify.processing.region_table import Region, RegionMap
 
 
 class ConnectedComponentRegionProcessor:

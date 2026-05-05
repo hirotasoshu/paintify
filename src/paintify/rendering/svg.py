@@ -5,7 +5,9 @@ from xml.sax.saxutils import escape
 import numpy as np
 
 from paintify.config import PaintifyConfig
-from paintify.models import LabelPlacement, OutputArtifact, PaintByNumbersDocument
+from paintify.pipeline import PaintByNumbersDocument
+from paintify.processing.labels import LabelPlacement
+from paintify.rendering.artifacts import OutputArtifact
 
 
 class SvgOutlineRenderer:

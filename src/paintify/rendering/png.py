@@ -4,7 +4,10 @@ import cv2
 import numpy as np
 
 from paintify.config import PaintifyConfig
-from paintify.models import LabelPlacement, OutputArtifact, PaintByNumbersDocument, PaletteEntry
+from paintify.pipeline import PaintByNumbersDocument
+from paintify.processing.labels import LabelPlacement
+from paintify.processing.palette import PaletteEntry
+from paintify.rendering.artifacts import OutputArtifact
 
 
 class PngPreviewRenderer:
