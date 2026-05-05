@@ -17,6 +17,26 @@ Every run writes these files to the output directory:
 - `palette.json`: the numbered paint palette as JSON.
 - `manifest.json`: reproducibility metadata, settings, palette, regions, and label positions.
 
+## Installation
+
+Install the CLI from PyPI with `uv`:
+
+```bash
+uv tool install paintify
+```
+
+Then run:
+
+```bash
+paintify --help
+```
+
+You can also run it without a persistent install:
+
+```bash
+uvx paintify --help
+```
+
 ## Install For Development
 
 ```bash
@@ -200,7 +220,6 @@ renderers, or build UI around the paint-by-numbers data.
 ```bash
 make lint
 make test
-make build
 ```
 
 To run individual checks:
@@ -211,21 +230,3 @@ uv run flake8 src tests
 uv run ty check src tests
 uv run pytest
 ```
-
-Build artifacts for PyPI are written to `dist/` with:
-
-```bash
-uv build
-```
-
-## Project Structure
-
-The code is organized by responsibility rather than generic architecture layers:
-
-- `cli/` owns the Typer command entrypoint.
-- `config/` owns generation settings, preset resolution, and validation.
-- `processing/` owns image loading, color quantization, palette logic, region processing, and label
-  placement. Region processing is split into table/compaction, fill, and local reduction helpers to
-  keep the reducer readable.
-- `rendering/` owns SVG, PNG, JSON rendering, and artifact writing.
-- `pipeline.py` wires the processing and rendering components into the generator.
