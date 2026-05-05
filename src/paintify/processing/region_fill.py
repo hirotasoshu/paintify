@@ -91,6 +91,7 @@ class RegionFillContext:
             cv2.DIST_MASK_PRECISE,
             labelType=cv2.DIST_LABEL_PIXEL,
         )
+        labels = np.asarray(labels, dtype=np.int32)
         source_y, source_x = np.nonzero(source_mask)
         label_ids = labels[source_y, source_x]
         order = np.argsort(label_ids, kind="stable")

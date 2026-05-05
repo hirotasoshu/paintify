@@ -65,7 +65,7 @@ def test_tiny_region_merge_removes_small_neighbor_region() -> None:
     assert len(regions) == 1
     assert regions[0].area == 25
     assert int(merged_labels.max()) == 1
-    assert set(int(value) for value in merged_colors.ravel()) == {0}
+    assert {int(value) for value in merged_colors.ravel()} == {0}
 
 
 def test_process_removes_one_pixel_strips_before_building_regions() -> None:
@@ -87,7 +87,7 @@ def test_process_removes_one_pixel_strips_before_building_regions() -> None:
 
     assert len(regions) == 1
     assert int(region_labels.max()) == 1
-    assert set(int(value) for value in merged_colors.ravel()) == {0}
+    assert {int(value) for value in merged_colors.ravel()} == {0}
 
 
 def test_tiny_region_merge_keeps_total_area_invariant() -> None:
@@ -130,7 +130,7 @@ def test_max_regions_merges_smallest_regions_and_compacts_ids() -> None:
     assert sum(region.area for region in regions) == color_labels.size
     assert sorted(int(value) for value in np.unique(merged_labels)) == [1, 2]
     assert {region.id for region in regions} == {1, 2}
-    assert set(int(value) for value in np.unique(merged_colors)) <= {
+    assert {int(value) for value in np.unique(merged_colors)} <= {
         region.color_index for region in regions
     }
 
@@ -222,7 +222,7 @@ def test_deleted_region_rebuilds_and_merges_same_color_neighbors() -> None:
 
     assert len(regions) == 1
     assert int(merged_labels.max()) == 1
-    assert set(int(value) for value in merged_colors.ravel()) == {0}
+    assert {int(value) for value in merged_colors.ravel()} == {0}
 
 
 def test_one_by_one_region_cap_is_fast_on_grid() -> None:
@@ -277,8 +277,8 @@ def test_tiny_region_pixels_are_reassigned_to_nearest_neighbor_regions() -> None
     )
 
     assert len(regions) == 2
-    assert set(int(value) for value in merged_colors[:, 3]) == {0}
-    assert set(int(value) for value in merged_colors[:, 4]) == {2}
+    assert {int(value) for value in merged_colors[:, 3]} == {0}
+    assert {int(value) for value in merged_colors[:, 4]} == {2}
 
 
 def test_nearest_neighbor_merge_breaks_distance_ties_by_color_distance() -> None:

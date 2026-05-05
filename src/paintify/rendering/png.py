@@ -11,6 +11,7 @@ class PngPreviewRenderer:
     artifact_name = "preview.png"
 
     def render(self, config: PaintifyConfig, document: PaintByNumbersDocument) -> OutputArtifact:
+        del config
         return OutputArtifact(
             self.artifact_name,
             self._render_png(

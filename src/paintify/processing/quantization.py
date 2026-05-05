@@ -27,9 +27,8 @@ class KMeansQuantizer:
         cluster_count = max(1, min(max_colors, unique_rgb.shape[0]))
         if cluster_count == 1:
             centers = np.average(unique_rgb.astype(float), axis=0, weights=counts).reshape(1, 3)
-            unique_labels = np.zeros(unique_rgb.shape[0], dtype=np.int32)
         else:
-            unique_labels, centers = self._deterministic_kmeans(
+            _, centers = self._deterministic_kmeans(
                 unique_rgb.astype(float),
                 counts.astype(float),
                 cluster_count,

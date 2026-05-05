@@ -7,10 +7,8 @@ import cv2
 import numpy as np
 from typer.testing import CliRunner
 
-import paintify.cli as cli
-from paintify.cli import app
+from paintify import cli
 from paintify.config import SettingsResolver
-
 
 ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
@@ -24,7 +22,7 @@ def _plain_output(output: str) -> str:
 
 
 def test_cli_help_lists_core_options() -> None:
-    result = CliRunner().invoke(app, ["--help"])
+    result = CliRunner().invoke(cli.app, ["--help"])
 
     assert result.exit_code == 0
     output = _plain_output(result.output)
@@ -50,7 +48,7 @@ def test_cli_no_preset_reports_missing_manual_values(tmp_path: Path) -> None:
     image = np.full((2, 2, 3), (255, 0, 0), dtype=np.uint8)
     _write_rgb_image(image_path, image)
 
-    result = CliRunner().invoke(app, [str(image_path), "--no-preset"])
+    result = CliRunner().invoke(cli.app, [str(image_path), "--no-preset"])
 
     assert result.exit_code != 0
     assert "max_colors is required when --no-preset is used" in _plain_output(result.output)
@@ -60,7 +58,7 @@ def test_cli_reports_clean_error_for_non_image_input(tmp_path: Path) -> None:
     image_path = tmp_path / "not-image.txt"
     image_path.write_text("definitely not an image", encoding="utf-8")
 
-    result = CliRunner().invoke(app, [str(image_path)])
+    result = CliRunner().invoke(cli.app, [str(image_path)])
 
     assert result.exit_code != 0
     assert "is not a readable image file" in result.output
@@ -72,7 +70,7 @@ def test_cli_reports_clean_error_for_unknown_starter_palette(tmp_path: Path) -> 
     image = np.full((8, 8, 3), (255, 0, 0), dtype=np.uint8)
     _write_rgb_image(image_path, image)
 
-    result = CliRunner().invoke(app, [str(image_path), "--starter-palette", "bogus"])
+    result = CliRunner().invoke(cli.app, [str(image_path), "--starter-palette", "bogus"])
 
     assert result.exit_code != 0
     assert "unknown starter palette" in result.output
@@ -86,7 +84,7 @@ def test_cli_reports_clean_error_when_output_path_is_file(tmp_path: Path) -> Non
     _write_rgb_image(image_path, image)
     output_path.write_text("not a directory", encoding="utf-8")
 
-    result = CliRunner().invoke(app, [str(image_path), "--output-dir", str(output_path)])
+    result = CliRunner().invoke(cli.app, [str(image_path), "--output-dir", str(output_path)])
 
     assert result.exit_code != 0
     assert "could not write output artifacts" in result.output

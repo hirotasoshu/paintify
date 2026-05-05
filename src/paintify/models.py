@@ -28,7 +28,7 @@ class PaletteEntry:
     rgb: tuple[int, int, int]
 
     @classmethod
-    def from_rgb(cls, index: int, rgb: tuple[int, int, int]) -> "PaletteEntry":
+    def from_rgb(cls, index: int, rgb: tuple[int, int, int]) -> PaletteEntry:
         return cls(index=index, hex=cls._rgb_to_hex(rgb), rgb=rgb)
 
     @staticmethod

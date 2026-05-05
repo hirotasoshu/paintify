@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import ClassVar
 
 import numpy as np
 
 from paintify.models import PaletteEntry, Region
 from paintify.processing.color import lab_to_rgb, rgb_to_lab
 
+PaletteMap = dict[str, list[str]]
+
 
 class StarterPalette:
-    PALETTES: dict[str, list[str]] = {
+    hex_color_length = 6
+
+    PALETTES: ClassVar[PaletteMap] = {
         "basic": [
             "#ffffff",
             "#000000",
@@ -35,13 +40,12 @@ class StarterPalette:
         )
         starter_lab = rgb_to_lab(starter_rgb)
         distances = np.linalg.norm(lab_colors[:, None, :] - starter_lab[None, :, :], axis=2)
-        snapped = starter_lab[np.argmin(distances, axis=1)]
-        return snapped
+        return starter_lab[np.argmin(distances, axis=1)]
 
     @staticmethod
     def _hex_to_rgb(value: str) -> tuple[int, int, int]:
         clean = value.removeprefix("#")
-        if len(clean) != 6:
+        if len(clean) != StarterPalette.hex_color_length:
             raise ValueError(f"invalid hex color: {value}")
         return (int(clean[0:2], 16), int(clean[2:4], 16), int(clean[4:6], 16))
 

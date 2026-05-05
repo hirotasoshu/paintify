@@ -13,6 +13,7 @@ class SvgOutlineRenderer:
     scale = 6
 
     def render(self, config: PaintifyConfig, document: PaintByNumbersDocument) -> OutputArtifact:
+        del config
         return OutputArtifact(
             self.artifact_name, self._render_svg(document.region_labels, document.labels)
         )

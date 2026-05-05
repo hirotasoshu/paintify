@@ -16,7 +16,7 @@ def test_quantize_respects_bounded_color_count_and_shape() -> None:
 
     assert labels.shape == (8, 8)
     assert palette.shape[0] <= 2
-    assert len(set(int(value) for value in labels.ravel())) <= 2
+    assert len({int(value) for value in labels.ravel()}) <= 2
 
 
 def test_quantize_is_deterministic_for_seed() -> None:

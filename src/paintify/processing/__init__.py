@@ -14,7 +14,7 @@ __all__ = [
     "DistanceTransformLabelPlacer",
     "ImageInputError",
     "KMeansQuantizer",
-    "PaletteEntryBuilder",
     "OpenCvImageLoader",
+    "PaletteEntryBuilder",
     "StarterPalette",
 ]

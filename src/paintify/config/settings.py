@@ -16,6 +16,8 @@ class _Unset:
 
 UNSET: Final = _Unset()
 STARTER_PALETTES: Final = frozenset(("basic",))
+MIN_COLORS: Final = 2
+MIN_IMAGE_SIZE: Final = 8
 
 
 @dataclass(frozen=True)
@@ -31,10 +33,10 @@ class PaintifyConfig:
     max_regions: int | None = None
     seed: int = 0
 
-    def validated(self) -> "PaintifyConfig":
-        if self.max_colors < 2:
+    def validated(self) -> PaintifyConfig:
+        if self.max_colors < MIN_COLORS:
             raise SettingsError("max_colors must be at least 2")
-        if self.max_size < 8:
+        if self.max_size < MIN_IMAGE_SIZE:
             raise SettingsError("max_size must be at least 8 pixels")
         if self.min_region_size < 1:
             raise SettingsError("min_region_size must be positive")

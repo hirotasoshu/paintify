@@ -4,7 +4,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-
 import pytest
 
 from paintify.processing.image import ImageInputError, OpenCvImageLoader

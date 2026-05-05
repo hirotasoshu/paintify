@@ -11,6 +11,7 @@ from paintify.processing.region_table import RegionMap
 
 class ConnectedComponentRegionProcessor:
     narrow_strip_cleanup_runs = 3
+    narrow_strip_width = 3
 
     def process(
         self,
@@ -105,7 +106,7 @@ class ConnectedComponentRegionProcessor:
 
     @staticmethod
     def _cleanup_horizontal_strips(color_labels: np.ndarray, next_labels: np.ndarray) -> None:
-        if color_labels.shape[1] < 3:
+        if color_labels.shape[1] < ConnectedComponentRegionProcessor.narrow_strip_width:
             return
         left = color_labels[:, :-2]
         current = color_labels[:, 1:-1]
@@ -115,7 +116,7 @@ class ConnectedComponentRegionProcessor:
 
     @staticmethod
     def _cleanup_vertical_strips(color_labels: np.ndarray, next_labels: np.ndarray) -> None:
-        if color_labels.shape[0] < 3:
+        if color_labels.shape[0] < ConnectedComponentRegionProcessor.narrow_strip_width:
             return
         top = color_labels[:-2, :]
         current = color_labels[1:-1, :]

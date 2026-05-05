@@ -17,6 +17,7 @@ class PaletteJsonRenderer:
     artifact_name = "palette.json"
 
     def render(self, config: PaintifyConfig, document: PaintByNumbersDocument) -> OutputArtifact:
+        del config
         return OutputArtifact(self.artifact_name, self._serialize_palette(document.palette))
 
     def _serialize_palette(self, palette: list[PaletteEntry]) -> str:
