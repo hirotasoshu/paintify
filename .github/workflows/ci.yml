@@ -10,8 +10,14 @@ on:
 
 jobs:
   lint:
-    name: "Lint & Test"
+    name: "Lint & Test (${{ matrix.python-version }})"
     runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.14.3"
     steps:
       - name: "Checkout the repository"
         uses: "actions/checkout@v6.0.2"
@@ -19,7 +25,7 @@ jobs:
       - name: "Install uv"
         uses: "astral-sh/setup-uv@v8.1.0"
         with:
-          python-version: "3.14.3"
+          python-version: "${{ matrix.python-version }}"
           enable-cache: true
 
       - name: "Install dependencies"
