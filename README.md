@@ -19,6 +19,8 @@ Every run writes these files to the output directory:
 
 ## Installation
 
+`paintify` supports Python 3.12 and newer.
+
 Install the CLI from PyPI with `uv`:
 
 ```bash
@@ -62,20 +64,28 @@ paintify input.png \
   --max-size 900 \
   --min-region-size 24 \
   --smooth-radius 0.5 \
-  --starter-palette none \
+  --palette-file palette.json \
   --max-regions 500
 ```
 
-Optional starter palette snapping keeps colors close to a fixed basic paint set:
+Optional palette-file snapping keeps generated colors close to a fixed paint set:
 
 ```bash
-paintify input.png --output-dir out --starter-palette basic
+paintify input.png --output-dir out --palette-file palette.json
 ```
 
-Use `--starter-palette none` to disable palette snapping explicitly.
+The palette file uses the same list format as output `palette.json`. `hex` is required and `rgb` is
+ignored if present:
+
+```json
+[
+  {"index": 1, "hex": "#d62828", "rgb": [214, 40, 40]},
+  {"index": 2, "hex": "#277da1"}
+]
+```
 
 For fully manual settings, disable presets with `--no-preset`. In this mode paintify requires all
-generation settings to be provided, including an explicit starter palette value (`none` is valid):
+generation settings to be provided. `--palette-file` remains optional:
 
 ```bash
 paintify input.png \
@@ -84,7 +94,6 @@ paintify input.png \
   --max-size 180 \
   --min-region-size 20 \
   --smooth-radius 0.9 \
-  --starter-palette none \
   --max-regions 200
 ```
 
@@ -102,8 +111,7 @@ paintify input.png \
    colors instead of clustering every pixel. The `--seed` controls the initial cluster centers.
 5. Palette colors are compared in Lab color space. Lab distances usually match human color
    perception better than raw RGB distances.
-6. If `--starter-palette basic` is used, each generated color is snapped to the nearest color from a
-   small built-in starter paint palette.
+6. If `--palette-file` is used, each generated color is snapped to the nearest color from that file.
 7. Thin one-pixel strips are cleaned up before region construction.
 8. Adjacent pixels with the same palette color are split into connected regions.
 9. Small regions below `--min-region-size` are merged into nearby kept regions. If the result still
@@ -125,18 +133,18 @@ The same input, settings, and seed should produce the same output.
 | `--max-size` | Longest side of the working image in pixels. | Larger values preserve detail but increase runtime and region count. |
 | `--min-region-size` | Minimum target region area in working pixels. | Larger values remove tiny islands; smaller values keep fine details. |
 | `--smooth-radius` | Gaussian blur radius before color reduction. | Larger values simplify noisy images; `0` disables smoothing. |
-| `--starter-palette` | `basic` or `none`. | `basic` limits output colors to a small fixed paint-like palette. |
+| `--palette-file` | Palette JSON file. | Limits output colors to the nearest colors listed in the file. |
 | `--max-regions` | Maximum number of final numbered regions. | Lower values simplify the template; higher values preserve detail. |
 | `--seed` | Deterministic seed for k-means initialization. | Change it to try different color clustering while keeping settings fixed. |
 | `--output-dir` / `-o` | Directory for generated artifacts. | Defaults to `paintify-out`. |
 
 ## Difficulty Presets
 
-| Difficulty | Colors | Max size | Min region size | Smooth radius | Max regions | Starter palette |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| `easy` | 15 | 768 | 40 | 0.6 | 300 | none |
-| `medium` | 20 | 1024 | 20 | 0.4 | 700 | none |
-| `hard` | 30 | 1280 | 12 | 0.25 | 1200 | none |
+| Difficulty | Colors | Max size | Min region size | Smooth radius | Max regions |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `easy` | 15 | 768 | 40 | 0.6 | 300 |
+| `medium` | 20 | 1024 | 20 | 0.4 | 700 |
+| `hard` | 30 | 1280 | 12 | 0.25 | 1200 |
 
 Use `easy` for simpler printable templates, `medium` for balanced results, and `hard` when the input
 has details you want to preserve.
@@ -174,7 +182,7 @@ metadata, and label positions:
     "max_size": 768,
     "min_region_size": 40,
     "smooth_radius": 0.6,
-    "starter_palette": null,
+    "palette_file": null,
     "max_regions": 300
   },
   "image_size": {"width": 768, "height": 512},
@@ -211,7 +219,7 @@ renderers, or build UI around the paint-by-numbers data.
   lower `--max-regions`, or use `--difficulty easy`.
 - If the result loses important details, increase `--max-size`, increase `--colors`, decrease
   `--smooth-radius`, or use `--difficulty hard`.
-- If the colors are hard to match with real paints, try `--starter-palette basic`.
+- If the colors are hard to match with real paints, provide a paint list with `--palette-file`.
 - If the segmentation looks odd but the settings are good, change `--seed` to try another color
   clustering.
 
