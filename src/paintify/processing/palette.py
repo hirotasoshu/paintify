@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, replace
-from typing import ClassVar
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from paintify.processing.color import lab_to_rgb, rgb_to_lab
 from paintify.processing.region_table import Region
 
-PaletteMap = dict[str, list[str]]
+
+class PaletteInputError(ValueError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -26,43 +30,46 @@ class PaletteEntry:
         return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
-class StarterPalette:
+@dataclass(frozen=True)
+class CustomPalette:
+    rgb: np.ndarray
+
     hex_color_length = 6
 
-    PALETTES: ClassVar[PaletteMap] = {
-        "basic": [
-            "#ffffff",
-            "#000000",
-            "#d62828",
-            "#f77f00",
-            "#fcbf49",
-            "#2a9d8f",
-            "#277da1",
-            "#5e548e",
-            "#8d5524",
-            "#6a994e",
-        ]
-    }
+    @classmethod
+    def load(cls, path: Path) -> CustomPalette:
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except OSError as error:
+            raise PaletteInputError(f"could not read palette file: {path}") from error
+        except json.JSONDecodeError as error:
+            raise PaletteInputError(f"palette file is not valid JSON: {path}") from error
+        if not isinstance(raw, list) or not raw:
+            raise PaletteInputError("palette file must contain a non-empty list")
+        return cls(
+            rgb=np.array([cls._read_entry_rgb(entry) for entry in raw], dtype=np.uint8),
+        )
+
+    def snap_lab_colors(self, lab_colors: np.ndarray) -> np.ndarray:
+        palette_lab = rgb_to_lab(self.rgb)
+        distances = np.linalg.norm(lab_colors[:, None, :] - palette_lab[None, :, :], axis=2)
+        return palette_lab[np.argmin(distances, axis=1)]
 
     @classmethod
-    def snap_lab_colors(cls, lab_colors: np.ndarray, starter_name: str | None) -> np.ndarray:
-        if starter_name is None:
-            return lab_colors
-        if starter_name not in cls.PALETTES:
-            raise ValueError(f"unknown starter palette: {starter_name}")
-        starter_rgb = np.array(
-            [cls._hex_to_rgb(value) for value in cls.PALETTES[starter_name]], dtype=np.uint8
-        )
-        starter_lab = rgb_to_lab(starter_rgb)
-        distances = np.linalg.norm(lab_colors[:, None, :] - starter_lab[None, :, :], axis=2)
-        return starter_lab[np.argmin(distances, axis=1)]
+    def _read_entry_rgb(cls, entry: Any) -> tuple[int, int, int]:
+        if not isinstance(entry, dict) or not isinstance(entry.get("hex"), str):
+            raise PaletteInputError("palette entries must contain a hex string")
+        return cls._hex_to_rgb(entry["hex"])
 
-    @staticmethod
-    def _hex_to_rgb(value: str) -> tuple[int, int, int]:
+    @classmethod
+    def _hex_to_rgb(cls, value: str) -> tuple[int, int, int]:
         clean = value.removeprefix("#")
-        if len(clean) != StarterPalette.hex_color_length:
-            raise ValueError(f"invalid hex color: {value}")
-        return (int(clean[0:2], 16), int(clean[2:4], 16), int(clean[4:6], 16))
+        if len(clean) != cls.hex_color_length:
+            raise PaletteInputError(f"invalid hex color: {value}")
+        try:
+            return (int(clean[0:2], 16), int(clean[2:4], 16), int(clean[4:6], 16))
+        except ValueError as error:
+            raise PaletteInputError(f"invalid hex color: {value}") from error
 
 
 class PaletteEntryBuilder:

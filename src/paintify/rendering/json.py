@@ -65,7 +65,9 @@ class ManifestJsonRenderer:
                 "max_size": config.max_size,
                 "min_region_size": config.min_region_size,
                 "smooth_radius": config.smooth_radius,
-                "starter_palette": config.starter_palette,
+                "palette_file": str(config.palette_file)
+                if config.palette_file is not None
+                else None,
                 "max_regions": config.max_regions,
             },
             "image_size": {"width": image_size[0], "height": image_size[1]},

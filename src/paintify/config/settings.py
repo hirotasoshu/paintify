@@ -9,13 +9,6 @@ class SettingsError(ValueError):
     pass
 
 
-@dataclass(frozen=True)
-class _Unset:
-    pass
-
-
-UNSET: Final = _Unset()
-STARTER_PALETTES: Final = frozenset(("basic",))
 MIN_COLORS: Final = 2
 MIN_IMAGE_SIZE: Final = 8
 
@@ -29,7 +22,7 @@ class PaintifyConfig:
     max_size: int = 180
     min_region_size: int = 24
     smooth_radius: float = 1.0
-    starter_palette: str | None = "basic"
+    palette_file: Path | None = None
     max_regions: int | None = None
     seed: int = 0
 
@@ -52,7 +45,6 @@ class PresetValues(TypedDict):
     max_size: int
     min_region_size: int
     smooth_radius: float
-    starter_palette: str | None
     max_regions: int
 
 
@@ -62,7 +54,6 @@ PRESETS: dict[str, PresetValues] = {
         "max_size": 768,
         "min_region_size": 40,
         "smooth_radius": 0.6,
-        "starter_palette": None,
         "max_regions": 300,
     },
     "medium": {
@@ -70,7 +61,6 @@ PRESETS: dict[str, PresetValues] = {
         "max_size": 1024,
         "min_region_size": 20,
         "smooth_radius": 0.4,
-        "starter_palette": None,
         "max_regions": 700,
     },
     "hard": {
@@ -78,7 +68,6 @@ PRESETS: dict[str, PresetValues] = {
         "max_size": 1280,
         "min_region_size": 12,
         "smooth_radius": 0.25,
-        "starter_palette": None,
         "max_regions": 1200,
     },
 }
@@ -90,7 +79,7 @@ class SettingsOverrides:
     max_size: int | None = None
     min_region_size: int | None = None
     smooth_radius: float | None = None
-    starter_palette: str | None | _Unset = UNSET
+    palette_file: Path | None = None
     max_regions: int | None = None
 
 
@@ -120,7 +109,6 @@ class SettingsResolver:
             "max_size": preset["max_size"],
             "min_region_size": preset["min_region_size"],
             "smooth_radius": preset["smooth_radius"],
-            "starter_palette": preset["starter_palette"],
             "max_regions": preset["max_regions"],
         }
         values.update(overrides or {})
@@ -132,7 +120,7 @@ class SettingsResolver:
             max_size=cls._as_int(values["max_size"], "max_size"),
             min_region_size=cls._as_int(values["min_region_size"], "min_region_size"),
             smooth_radius=cls._as_float(values["smooth_radius"], "smooth_radius"),
-            starter_palette=cls._as_optional_str(values["starter_palette"], "starter_palette"),
+            palette_file=cls._as_optional_path(values.get("palette_file"), "palette_file"),
             max_regions=cls._as_int(values["max_regions"], "max_regions"),
             seed=config.seed,
         ).validated()
@@ -162,7 +150,7 @@ class SettingsResolver:
             max_size=self._required_int(values, "max_size"),
             min_region_size=self._required_int(values, "min_region_size"),
             smooth_radius=self._required_float(values, "smooth_radius"),
-            starter_palette=self._required_optional_str(values, "starter_palette"),
+            palette_file=self._as_optional_path(values.get("palette_file"), "palette_file"),
             max_regions=self._required_int(values, "max_regions"),
             seed=options.seed,
         ).validated()
@@ -177,8 +165,8 @@ class SettingsResolver:
             values["min_region_size"] = overrides.min_region_size
         if overrides.smooth_radius is not None:
             values["smooth_radius"] = overrides.smooth_radius
-        if not isinstance(overrides.starter_palette, _Unset):
-            values["starter_palette"] = overrides.starter_palette
+        if overrides.palette_file is not None:
+            values["palette_file"] = overrides.palette_file
         if overrides.max_regions is not None:
             values["max_regions"] = overrides.max_regions
 
@@ -211,15 +199,9 @@ class SettingsResolver:
         return cls._as_float(values[name], name)
 
     @classmethod
-    def _as_optional_str(cls, value: object, name: str) -> str | None:
-        if value is not None and not isinstance(value, str):
-            raise SettingsError(f"{name} must be a string or None")
-        if name == "starter_palette" and value is not None and value not in STARTER_PALETTES:
-            raise SettingsError(f"unknown starter palette: {value}")
+    def _as_optional_path(cls, value: object, name: str) -> Path | None:
+        if value is None:
+            return None
+        if not isinstance(value, Path):
+            raise SettingsError(f"{name} must be a path or None")
         return value
-
-    @classmethod
-    def _required_optional_str(cls, values: dict[str, object], name: str) -> str | None:
-        if name not in values:
-            raise cls._missing_error(name)
-        return cls._as_optional_str(values[name], name)

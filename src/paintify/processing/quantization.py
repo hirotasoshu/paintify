@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from paintify.processing.color import rgb_to_lab
-from paintify.processing.palette import PaletteEntryBuilder, StarterPalette
+from paintify.processing.palette import CustomPalette, PaletteEntryBuilder
 
 
 class KMeansQuantizer:
@@ -14,7 +16,7 @@ class KMeansQuantizer:
         image: np.ndarray,
         max_colors: int,
         seed: int,
-        starter_palette: str | None,
+        palette_file: Path | None,
     ) -> tuple[np.ndarray, np.ndarray]:
         height, width = image.shape[:2]
         quantized_rgb = self._quantized_rgb(image)
@@ -36,7 +38,8 @@ class KMeansQuantizer:
             )
 
         centers_lab = rgb_to_lab(np.clip(centers, 0, 255).astype(np.uint8))
-        centers_lab = StarterPalette.snap_lab_colors(centers_lab, starter_palette)
+        if palette_file is not None:
+            centers_lab = CustomPalette.load(palette_file).snap_lab_colors(centers_lab)
         snapped_palette = PaletteEntryBuilder().build(centers_lab)
 
         lab_palette = np.array([entry.rgb for entry in snapped_palette], dtype=np.uint8)

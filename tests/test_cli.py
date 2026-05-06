@@ -31,7 +31,9 @@ def test_cli_help_lists_core_options() -> None:
     assert "--colors" in output
     assert "--smooth-radius" in output
     assert "--max-regions" in output
+    assert "--palette-file" in output
     assert "--no-preset" in output
+    assert "--starter-palette" not in output
 
 
 def test_preset_names_are_stable() -> None:
@@ -65,7 +67,7 @@ def test_cli_reports_clean_error_for_non_image_input(tmp_path: Path) -> None:
     assert "UnidentifiedImageError" not in result.output
 
 
-def test_cli_reports_clean_error_for_unknown_starter_palette(tmp_path: Path) -> None:
+def test_cli_rejects_removed_starter_palette_option(tmp_path: Path) -> None:
     image_path = tmp_path / "input.png"
     image = np.full((8, 8, 3), (255, 0, 0), dtype=np.uint8)
     _write_rgb_image(image_path, image)
@@ -73,7 +75,7 @@ def test_cli_reports_clean_error_for_unknown_starter_palette(tmp_path: Path) -> 
     result = CliRunner().invoke(cli.app, [str(image_path), "--starter-palette", "bogus"])
 
     assert result.exit_code != 0
-    assert "unknown starter palette" in result.output
+    assert "No such option" in result.output
     assert "Traceback" not in result.output
 
 

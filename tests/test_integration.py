@@ -92,7 +92,7 @@ def test_cli_integration_is_deterministic(tmp_path: Path) -> None:
     ).read_text(encoding="utf-8")
 
 
-def test_hard_difficulty_preserves_palette_free_default(tmp_path: Path) -> None:
+def test_hard_difficulty_preserves_palette_file_free_default(tmp_path: Path) -> None:
     image_path = tmp_path / "input.png"
     output_dir = tmp_path / "out"
     image = np.zeros((10, 10, 3), dtype=np.uint8)
@@ -106,7 +106,7 @@ def test_hard_difficulty_preserves_palette_free_default(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["settings"]["starter_palette"] is None
+    assert manifest["settings"]["palette_file"] is None
 
 
 def test_manual_mode_manifest_marks_manual_difficulty(tmp_path: Path) -> None:
@@ -132,8 +132,6 @@ def test_manual_mode_manifest_marks_manual_difficulty(tmp_path: Path) -> None:
             "3",
             "--smooth-radius",
             "0",
-            "--starter-palette",
-            "none",
             "--max-regions",
             "2",
         ],
@@ -160,7 +158,7 @@ def test_palette_output_is_compacted_after_region_merge(tmp_path: Path) -> None:
         max_size=8,
         min_region_size=2,
         smooth_radius=0,
-        starter_palette=None,
+        palette_file=None,
         max_regions=64,
         seed=0,
     )
