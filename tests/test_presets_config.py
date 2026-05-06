@@ -115,6 +115,21 @@ def test_config_validation_rejects_too_few_colors() -> None:
         config.validated()
 
 
+def test_config_validation_accepts_all_palette_colors_sentinel_with_palette_file() -> None:
+    config = PaintifyConfig(
+        Path("in.png"), Path("out"), max_colors=-1, palette_file=Path("palette.json")
+    )
+
+    assert config.validated() == config
+
+
+def test_config_validation_rejects_all_colors_sentinel_without_palette_file() -> None:
+    config = PaintifyConfig(Path("in.png"), Path("out"), max_colors=-1, palette_file=None)
+
+    with pytest.raises(ValueError, match="--colors -1 requires --palette-file"):
+        config.validated()
+
+
 def test_config_validation_rejects_invalid_max_regions() -> None:
     config = PaintifyConfig(Path("in.png"), Path("out"), max_regions=0)
 

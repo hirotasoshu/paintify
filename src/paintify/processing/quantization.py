@@ -26,7 +26,13 @@ class KMeansQuantizer:
             return_inverse=True,
             return_counts=True,
         )
-        cluster_count = max(1, min(max_colors, unique_rgb.shape[0]))
+        custom_palette = CustomPalette.load(palette_file) if palette_file is not None else None
+        effective_max_colors = max_colors
+        if max_colors == -1:
+            if custom_palette is None:
+                raise ValueError("max_colors=-1 requires a palette file")
+            effective_max_colors = custom_palette.color_count
+        cluster_count = max(1, min(effective_max_colors, unique_rgb.shape[0]))
         if cluster_count == 1:
             centers = np.average(unique_rgb.astype(float), axis=0, weights=counts).reshape(1, 3)
         else:
@@ -38,8 +44,8 @@ class KMeansQuantizer:
             )
 
         centers_lab = rgb_to_lab(np.clip(centers, 0, 255).astype(np.uint8))
-        if palette_file is not None:
-            centers_lab = CustomPalette.load(palette_file).snap_lab_colors(centers_lab)
+        if custom_palette is not None:
+            centers_lab = custom_palette.snap_lab_colors(centers_lab)
         snapped_palette = PaletteEntryBuilder().build(centers_lab)
 
         lab_palette = np.array([entry.rgb for entry in snapped_palette], dtype=np.uint8)

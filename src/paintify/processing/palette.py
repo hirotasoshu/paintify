@@ -44,22 +44,30 @@ class CustomPalette:
             raise PaletteInputError(f"could not read palette file: {path}") from error
         except json.JSONDecodeError as error:
             raise PaletteInputError(f"palette file is not valid JSON: {path}") from error
-        if not isinstance(raw, list) or not raw:
-            raise PaletteInputError("palette file must contain a non-empty list")
+        colors = cls._read_colors(raw)
         return cls(
-            rgb=np.array([cls._read_entry_rgb(entry) for entry in raw], dtype=np.uint8),
+            rgb=np.array([cls._hex_to_rgb(color) for color in colors], dtype=np.uint8),
         )
+
+    @property
+    def color_count(self) -> int:
+        return int(self.rgb.shape[0])
+
+    @classmethod
+    def _read_colors(cls, raw: Any) -> list[str]:
+        if not isinstance(raw, dict) or "colors" not in raw:
+            raise PaletteInputError("palette file must contain a colors list")
+        colors = raw["colors"]
+        if not isinstance(colors, list) or not colors:
+            raise PaletteInputError("palette file colors must be a non-empty list")
+        if not all(isinstance(color, str) for color in colors):
+            raise PaletteInputError("palette file colors must be hex strings")
+        return colors
 
     def snap_lab_colors(self, lab_colors: np.ndarray) -> np.ndarray:
         palette_lab = rgb_to_lab(self.rgb)
         distances = np.linalg.norm(lab_colors[:, None, :] - palette_lab[None, :, :], axis=2)
         return palette_lab[np.argmin(distances, axis=1)]
-
-    @classmethod
-    def _read_entry_rgb(cls, entry: Any) -> tuple[int, int, int]:
-        if not isinstance(entry, dict) or not isinstance(entry.get("hex"), str):
-            raise PaletteInputError("palette entries must contain a hex string")
-        return cls._hex_to_rgb(entry["hex"])
 
     @classmethod
     def _hex_to_rgb(cls, value: str) -> tuple[int, int, int]:

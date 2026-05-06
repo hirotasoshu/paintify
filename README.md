@@ -74,15 +74,17 @@ Optional palette-file snapping keeps generated colors close to a fixed paint set
 paintify input.png --output-dir out --palette-file palette.json
 ```
 
-The palette file uses the same list format as output `palette.json`. `hex` is required and `rgb` is
-ignored if present:
+The palette file is a JSON object with a `colors` list of hex strings:
 
 ```json
-[
-  {"index": 1, "hex": "#d62828", "rgb": [214, 40, 40]},
-  {"index": 2, "hex": "#277da1"}
-]
+{
+  "colors": ["#d62828", "#277da1", "#fcbf49"]
+}
 ```
+
+Use `--colors -1` with `--palette-file` when every color from the palette file may be used. Without
+`--colors -1`, the selected preset still caps the generated color count before snapping to the file.
+`--colors -1` without `--palette-file` is invalid.
 
 For fully manual settings, disable presets with `--no-preset`. In this mode paintify requires all
 generation settings to be provided. `--palette-file` remains optional:
@@ -129,11 +131,11 @@ The same input, settings, and seed should produce the same output.
 | --- | --- | --- |
 | `--difficulty` | Preset name: `easy`, `medium`, or `hard`. | Higher difficulty keeps more colors, detail, and regions. |
 | `--no-preset` | Disable presets and require explicit settings. | Useful for reproducible manual tuning. |
-| `--colors` / `-c` | Maximum number of paint colors before unused colors are compacted away. | More colors preserve detail but make painting harder. |
+| `--colors` / `-c` | Maximum number of paint colors before unused colors are compacted away. Use `-1` only with `--palette-file` to allow every file color. | More colors preserve detail but make painting harder. |
 | `--max-size` | Longest side of the working image in pixels. | Larger values preserve detail but increase runtime and region count. |
 | `--min-region-size` | Minimum target region area in working pixels. | Larger values remove tiny islands; smaller values keep fine details. |
 | `--smooth-radius` | Gaussian blur radius before color reduction. | Larger values simplify noisy images; `0` disables smoothing. |
-| `--palette-file` | Palette JSON file. | Limits output colors to the nearest colors listed in the file. |
+| `--palette-file` | JSON object with a `colors` list of hex strings. | Limits output colors to the nearest colors listed in the file. |
 | `--max-regions` | Maximum number of final numbered regions. | Lower values simplify the template; higher values preserve detail. |
 | `--seed` | Deterministic seed for k-means initialization. | Change it to try different color clustering while keeping settings fixed. |
 | `--output-dir` / `-o` | Directory for generated artifacts. | Defaults to `paintify-out`. |

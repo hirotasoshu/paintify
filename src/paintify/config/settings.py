@@ -11,6 +11,7 @@ class SettingsError(ValueError):
 
 MIN_COLORS: Final = 2
 MIN_IMAGE_SIZE: Final = 8
+ALL_PALETTE_COLORS: Final = -1
 
 
 @dataclass(frozen=True)
@@ -27,8 +28,15 @@ class PaintifyConfig:
     seed: int = 0
 
     def validated(self) -> PaintifyConfig:
+        if self.max_colors == ALL_PALETTE_COLORS:
+            if self.palette_file is None:
+                raise SettingsError("--colors -1 requires --palette-file")
+            return self._validated_non_color_settings()
         if self.max_colors < MIN_COLORS:
             raise SettingsError("max_colors must be at least 2")
+        return self._validated_non_color_settings()
+
+    def _validated_non_color_settings(self) -> PaintifyConfig:
         if self.max_size < MIN_IMAGE_SIZE:
             raise SettingsError("max_size must be at least 8 pixels")
         if self.min_region_size < 1:

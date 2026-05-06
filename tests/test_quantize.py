@@ -25,7 +25,7 @@ def test_quantize_is_deterministic_for_seed(tmp_path: Path) -> None:
     image = rng.integers(0, 255, size=(10, 10, 3), dtype=np.uint8)
     palette_path = tmp_path / "palette.json"
     palette_path.write_text(
-        json.dumps([{"hex": "#ffffff"}, {"hex": "#000000"}, {"hex": "#d62828"}]),
+        json.dumps({"colors": ["#ffffff", "#000000", "#d62828"]}),
         encoding="utf-8",
     )
 
@@ -39,3 +39,22 @@ def test_quantize_is_deterministic_for_seed(tmp_path: Path) -> None:
 
     np.testing.assert_array_equal(first_labels, second_labels)
     np.testing.assert_allclose(first_palette, second_palette)
+
+
+def test_quantize_uses_all_palette_file_colors_for_negative_one_max_colors(tmp_path: Path) -> None:
+    image = np.zeros((9, 9, 3), dtype=np.uint8)
+    image[:3, :, :] = (255, 0, 0)
+    image[3:6, :, :] = (0, 255, 0)
+    image[6:, :, :] = (0, 0, 255)
+    palette_path = tmp_path / "palette.json"
+    palette_path.write_text(
+        json.dumps({"colors": ["#ff0000", "#00ff00", "#0000ff"]}),
+        encoding="utf-8",
+    )
+
+    labels, palette = KMeansQuantizer().quantize(
+        image, max_colors=-1, seed=123, palette_file=palette_path
+    )
+
+    assert palette.shape[0] == 3
+    assert len({int(value) for value in labels.ravel()}) == 3
