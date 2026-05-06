@@ -33,7 +33,7 @@ class ImageLoader(Protocol):
 
 class Quantizer(Protocol):
     def quantize(
-        self, image: np.ndarray, max_colors: int, seed: int, starter_palette: str | None
+        self, image: np.ndarray, max_colors: int, seed: int, palette_file: Path | None
     ) -> tuple[np.ndarray, np.ndarray]: ...
 
 
@@ -114,7 +114,7 @@ class PaintifyGenerator:
         config = config.validated()
         image = self._image_loader.load(config.input_path, config.max_size, config.smooth_radius)
         color_labels, lab_palette = self._quantizer.quantize(
-            image, config.max_colors, config.seed, config.starter_palette
+            image, config.max_colors, config.seed, config.palette_file
         )
         region_labels, color_labels, regions = self._region_processor.process(
             color_labels, lab_palette, config.min_region_size, config.max_regions

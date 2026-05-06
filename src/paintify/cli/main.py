@@ -8,14 +8,11 @@ from rich.console import Console
 from paintify.cli.factory import create_paintify_generator
 from paintify.config import PaintifyOptions, SettingsError, SettingsOverrides, SettingsResolver
 from paintify.processing.image import ImageInputError
+from paintify.processing.palette import PaletteInputError
 from paintify.rendering import ArtifactWriteError
 
 app = typer.Typer(help="Generate paint-by-numbers artifacts from an image.")
 console = Console()
-
-
-def _normalize_starter_palette(value: str | None) -> str | None:
-    return None if value == "none" else value
 
 
 @app.command()
@@ -31,8 +28,8 @@ def main(
     colors: int | None = typer.Option(
         None, "--colors", "-c", help="Maximum number of paint colors."
     ),
-    starter_palette: str | None = typer.Option(
-        None, "--starter-palette", help="Starter palette name, or 'none'."
+    palette_file: Path | None = typer.Option(
+        None, "--palette-file", help="Palette JSON file to snap generated colors to."
     ),
     min_region_size: int | None = typer.Option(
         None, "--min-region-size", help="Minimum target region area in pixels."
@@ -59,11 +56,7 @@ def main(
                     max_size=max_size,
                     min_region_size=min_region_size,
                     smooth_radius=smooth_radius,
-                    starter_palette=(
-                        _normalize_starter_palette(starter_palette)
-                        if starter_palette is not None
-                        else SettingsOverrides().starter_palette
-                    ),
+                    palette_file=palette_file,
                     max_regions=max_regions,
                 ),
                 seed=seed,
@@ -74,7 +67,7 @@ def main(
 
     try:
         result = create_paintify_generator().generate(config)
-    except (ImageInputError, ArtifactWriteError) as error:
+    except (ImageInputError, PaletteInputError, ArtifactWriteError) as error:
         raise typer.BadParameter(str(error)) from error
     console.print(
         f"[green]Wrote[/green] {result.output_dir} "

@@ -7,7 +7,7 @@ import pytest
 from paintify.config import PaintifyConfig, PaintifyOptions, SettingsOverrides, SettingsResolver
 
 
-def test_presets_do_not_force_basic_starter_palette() -> None:
+def test_presets_do_not_force_palette_file() -> None:
     resolver = SettingsResolver()
 
     for difficulty in ("easy", "medium", "hard"):
@@ -17,7 +17,7 @@ def test_presets_do_not_force_basic_starter_palette() -> None:
             )
         )
 
-        assert resolved.starter_palette is None
+        assert resolved.palette_file is None
 
 
 def test_presets_shift_detail_upward_for_better_default_results() -> None:
@@ -62,7 +62,7 @@ def test_settings_resolver_applies_preset_with_explicit_overrides() -> None:
                 max_size=64,
                 min_region_size=8,
                 smooth_radius=0.25,
-                starter_palette=None,
+                palette_file=Path("palette.json"),
                 max_regions=12,
             ),
         )
@@ -72,7 +72,7 @@ def test_settings_resolver_applies_preset_with_explicit_overrides() -> None:
     assert resolved.max_size == 64
     assert resolved.min_region_size == 8
     assert resolved.smooth_radius == 0.25
-    assert resolved.starter_palette is None
+    assert resolved.palette_file == Path("palette.json")
     assert resolved.max_regions == 12
 
 
@@ -94,7 +94,6 @@ def test_no_preset_accepts_complete_manual_values() -> None:
                 max_size=80,
                 min_region_size=3,
                 smooth_radius=0,
-                starter_palette=None,
                 max_regions=20,
             ),
         )
@@ -105,7 +104,7 @@ def test_no_preset_accepts_complete_manual_values() -> None:
     assert resolved.max_size == 80
     assert resolved.min_region_size == 3
     assert resolved.smooth_radius == 0
-    assert resolved.starter_palette is None
+    assert resolved.palette_file is None
     assert resolved.max_regions == 20
 
 
@@ -113,6 +112,21 @@ def test_config_validation_rejects_too_few_colors() -> None:
     config = PaintifyConfig(Path("in.png"), Path("out"), max_colors=1)
 
     with pytest.raises(ValueError, match="max_colors"):
+        config.validated()
+
+
+def test_config_validation_accepts_all_palette_colors_sentinel_with_palette_file() -> None:
+    config = PaintifyConfig(
+        Path("in.png"), Path("out"), max_colors=-1, palette_file=Path("palette.json")
+    )
+
+    assert config.validated() == config
+
+
+def test_config_validation_rejects_all_colors_sentinel_without_palette_file() -> None:
+    config = PaintifyConfig(Path("in.png"), Path("out"), max_colors=-1, palette_file=None)
+
+    with pytest.raises(ValueError, match="--colors -1 requires --palette-file"):
         config.validated()
 
 
