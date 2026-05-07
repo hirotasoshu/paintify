@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "paintify"
-version = "0.2.1"
+version = "0.3.0"
 description = "Generate paint-by-numbers artifacts from an input image."
 readme = "README.md"
 license = "MIT"
