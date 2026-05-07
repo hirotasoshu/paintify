@@ -44,7 +44,7 @@ class KMeansQuantizer:
         centers_lab = rgb_to_lab(np.clip(centers, 0, 255).astype(np.uint8))
         if custom_palette is not None:
             centers_lab = custom_palette.snap_lab_colors(centers_lab)
-        snapped_palette = PaletteEntryBuilder().build(centers_lab)
+        snapped_palette = PaletteEntryBuilder(include_names=False).build(centers_lab)
 
         lab_palette = np.array([entry.rgb for entry in snapped_palette], dtype=np.uint8)
         lab_palette = rgb_to_lab(lab_palette)

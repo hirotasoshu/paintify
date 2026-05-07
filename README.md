@@ -160,13 +160,15 @@ after unused colors are removed and indices are compacted:
 
 ```json
 [
-  {"index": 1, "hex": "#f2d7b6", "rgb": [242, 215, 182]},
-  {"index": 2, "hex": "#8b5a2b", "rgb": [139, 90, 43]}
+  {"index": 1, "hex": "#f2d7b6", "rgb": [242, 215, 182], "name": "xkcd:light peach"},
+  {"index": 2, "hex": "#8b5a2b", "rgb": [139, 90, 43], "name": "xkcd:milk chocolate"}
 ]
 ```
 
 Use it when you need a shopping/mixing list, want to map numbers to physical paints, or want another
 program to read the generated palette.
+`name` is the nearest CSS4 or XKCD color name from vendored Matplotlib color data; it is a
+descriptive approximation, not a paint catalog match.
 
 ### `manifest.json`
 
@@ -190,7 +192,7 @@ metadata, and label positions:
   "image_size": {"width": 768, "height": 512},
   "artifacts": ["outline.svg", "preview.png", "palette.json", "manifest.json"],
   "palette": [
-    {"index": 1, "hex": "#f2d7b6", "rgb": [242, 215, 182]}
+    {"index": 1, "hex": "#f2d7b6", "rgb": [242, 215, 182], "name": "xkcd:light peach"}
   ],
   "regions": [
     {

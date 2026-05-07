@@ -18,7 +18,8 @@ class PaletteJsonRenderer:
 
     def _serialize_palette(self, palette: list[PaletteEntry]) -> str:
         data = [
-            {"index": entry.index, "hex": entry.hex, "rgb": list(entry.rgb)} for entry in palette
+            {"index": entry.index, "hex": entry.hex, "rgb": list(entry.rgb), "name": entry.name}
+            for entry in palette
         ]
         return json.dumps(data, indent=2) + "\n"
 
@@ -71,7 +72,12 @@ class ManifestJsonRenderer:
             "image_size": {"width": image_size[0], "height": image_size[1]},
             "artifacts": ["outline.svg", "preview.png", "palette.json", "manifest.json"],
             "palette": [
-                {"index": entry.index, "hex": entry.hex, "rgb": list(entry.rgb)}
+                {
+                    "index": entry.index,
+                    "hex": entry.hex,
+                    "rgb": list(entry.rgb),
+                    "name": entry.name,
+                }
                 for entry in palette
             ],
             "regions": [
