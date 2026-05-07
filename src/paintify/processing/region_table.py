@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections import Counter
 from dataclasses import dataclass
 
@@ -65,7 +63,7 @@ class RegionMap:
             counts.update(int(value) for value in neighbors if value not in (0, region_id))
         return counts
 
-    def window(self, bbox: tuple[int, int, int, int]) -> RegionMap:
+    def window(self, bbox: tuple[int, int, int, int]) -> "RegionMap":
         x1, y1, x2, y2 = bbox
         return RegionMap(self.region_labels[y1:y2, x1:x2], self.color_labels[y1:y2, x1:x2])
 

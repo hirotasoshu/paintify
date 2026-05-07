@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from paintify.pipeline import PaintifyGenerator, Renderer
 from paintify.processing import (
     CompactingPaletteBuilder,

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -15,5 +13,5 @@ class OutputArtifact:
 
 @dataclass(frozen=True)
 class OutputBundle:
-    document: PaintByNumbersDocument
+    document: "PaintByNumbersDocument"
     artifacts: list[OutputArtifact]
