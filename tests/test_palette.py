@@ -5,7 +5,13 @@ import numpy as np
 import pytest
 
 from paintify.processing.color import rgb_to_lab
-from paintify.processing.palette import CustomPalette, PaletteEntryBuilder, PaletteInputError
+from paintify.processing.palette import (
+    CompactingPaletteBuilder,
+    CustomPalette,
+    PaletteEntryBuilder,
+    PaletteInputError,
+)
+from paintify.processing.region_table import Region
 
 
 def test_custom_palette_loads_colors_object_hex_values(tmp_path: Path) -> None:
@@ -58,3 +64,31 @@ def test_build_palette_deduplicates_entries() -> None:
     white_lab = rgb_to_lab(np.array([[255, 255, 255], [255, 255, 255]], dtype=np.uint8))
 
     assert len(PaletteEntryBuilder().build(white_lab)) == 1
+
+
+def test_compacting_palette_builder_sorts_colors_by_visual_order() -> None:
+    lab_palette = rgb_to_lab(
+        np.array(
+            [
+                [0, 0, 255],
+                [255, 0, 0],
+                [0, 255, 0],
+            ],
+            dtype=np.uint8,
+        )
+    )
+    color_labels = np.array([[0, 1, 2]], dtype=np.int32)
+    regions = [
+        Region(id=1, color_index=0, area=1, bbox=(0, 0, 1, 1)),
+        Region(id=2, color_index=1, area=1, bbox=(1, 0, 2, 1)),
+        Region(id=3, color_index=2, area=1, bbox=(2, 0, 3, 1)),
+    ]
+
+    compact_labels, compact_palette, compact_regions = CompactingPaletteBuilder().build(
+        color_labels, lab_palette, regions
+    )
+    entries = PaletteEntryBuilder().build(compact_palette)
+
+    assert [entry.hex for entry in entries] == ["#ff0000", "#00ff00", "#0000ff"]
+    assert compact_labels.tolist() == [[2, 0, 1]]
+    assert [region.color_index for region in compact_regions] == [2, 0, 1]
