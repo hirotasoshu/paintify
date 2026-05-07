@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final, TypedDict
@@ -27,7 +25,7 @@ class PaintifyConfig:
     max_regions: int | None = None
     seed: int = 0
 
-    def validated(self) -> PaintifyConfig:
+    def validated(self) -> "PaintifyConfig":
         if self.max_colors == ALL_PALETTE_COLORS:
             if self.palette_file is None:
                 raise SettingsError("--colors -1 requires --palette-file")
@@ -36,7 +34,7 @@ class PaintifyConfig:
             raise SettingsError("max_colors must be at least 2")
         return self._validated_non_color_settings()
 
-    def _validated_non_color_settings(self) -> PaintifyConfig:
+    def _validated_non_color_settings(self) -> "PaintifyConfig":
         if self.max_size < MIN_IMAGE_SIZE:
             raise SettingsError("max_size must be at least 8 pixels")
         if self.min_region_size < 1:

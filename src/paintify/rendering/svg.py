@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from xml.sax.saxutils import escape
 
 import numpy as np
