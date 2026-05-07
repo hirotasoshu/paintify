@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -22,7 +20,7 @@ class PaletteEntry:
     rgb: tuple[int, int, int]
 
     @classmethod
-    def from_rgb(cls, index: int, rgb: tuple[int, int, int]) -> PaletteEntry:
+    def from_rgb(cls, index: int, rgb: tuple[int, int, int]) -> "PaletteEntry":
         return cls(index=index, hex=cls._rgb_to_hex(rgb), rgb=rgb)
 
     @staticmethod
@@ -37,7 +35,7 @@ class CustomPalette:
     hex_color_length = 6
 
     @classmethod
-    def load(cls, path: Path) -> CustomPalette:
+    def load(cls, path: Path) -> "CustomPalette":
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
         except OSError as error:
