@@ -1,10 +1,18 @@
+import json
 from pathlib import Path
 
 import typer
 from rich.console import Console
 
 from paintify.cli.factory import create_paintify_generator
-from paintify.config import PaintifyOptions, SettingsError, SettingsOverrides, SettingsResolver
+from paintify.config import (
+    PaintifyConfig,
+    PaintifyOptions,
+    SettingsError,
+    SettingsOverrides,
+    SettingsResolver,
+)
+from paintify.pipeline import GenerationResult
 from paintify.processing.image import ImageInputError
 from paintify.processing.palette import PaletteInputError
 from paintify.rendering import ArtifactWriteError
@@ -40,6 +48,10 @@ def main(
         None, "--max-regions", help="Maximum number of output regions."
     ),
     seed: int = typer.Option(0, "--seed", help="Deterministic quantization seed."),
+    verbose: bool = typer.Option(False, "--verbose", help="Print diagnostic details."),
+    debug_dir: Path | None = typer.Option(
+        None, "--debug-dir", help="Write debug diagnostics to this directory."
+    ),
 ) -> None:
     """Generate paint-by-numbers outline, preview, palette, and manifest artifacts."""
     try:
@@ -67,7 +79,63 @@ def main(
         result = create_paintify_generator().generate(config)
     except (ImageInputError, PaletteInputError, ArtifactWriteError) as error:
         raise typer.BadParameter(str(error)) from error
+    _handle_diagnostics(verbose, debug_dir, config, result)
     console.print(
         f"[green]Wrote[/green] {result.output_dir} "
         f"with {len(result.palette)} colors and {len(result.regions)} regions."
+    )
+
+
+def _handle_diagnostics(
+    verbose: bool,
+    debug_dir: Path | None,
+    config: PaintifyConfig,
+    result: GenerationResult,
+) -> None:
+    if debug_dir is not None:
+        try:
+            _write_debug_stats(debug_dir, config, result)
+        except OSError as error:
+            raise typer.BadParameter("could not write debug diagnostics") from error
+    if verbose:
+        _print_diagnostics(config, result)
+
+
+def _print_diagnostics(config: PaintifyConfig, result: GenerationResult) -> None:
+    console.print("[cyan]Diagnostics[/cyan]")
+    console.print(f"image_size: {result.document.image_size[0]}x{result.document.image_size[1]}")
+    console.print(f"settings: colors={config.max_colors}, max_regions={config.max_regions}")
+    console.print("artifacts: outline.svg, preview.png, palette.json, manifest.json")
+
+
+def _write_debug_stats(
+    debug_dir: Path,
+    config: PaintifyConfig,
+    result: GenerationResult,
+) -> None:
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "input": str(config.input_path),
+        "output_dir": str(result.output_dir),
+        "image_size": {
+            "width": result.document.image_size[0],
+            "height": result.document.image_size[1],
+        },
+        "settings": {
+            "difficulty": config.difficulty,
+            "max_colors": config.max_colors,
+            "max_size": config.max_size,
+            "min_region_size": config.min_region_size,
+            "smooth_radius": config.smooth_radius,
+            "palette_file": str(config.palette_file) if config.palette_file is not None else None,
+            "max_regions": config.max_regions,
+            "seed": config.seed,
+        },
+        "artifacts": ["outline.svg", "preview.png", "palette.json", "manifest.json"],
+        "color_count": len(result.palette),
+        "region_count": len(result.regions),
+    }
+    (debug_dir / "debug-stats.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )

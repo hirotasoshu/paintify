@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -88,4 +89,61 @@ def test_cli_reports_clean_error_when_output_path_is_file(tmp_path: Path) -> Non
 
     assert result.exit_code != 0
     assert "could not write output artifacts" in result.output
+    assert "Traceback" not in result.output
+
+
+def test_cli_verbose_prints_diagnostics(tmp_path: Path) -> None:
+    image_path = tmp_path / "input.png"
+    output_dir = tmp_path / "out"
+    image = np.full((8, 8, 3), (255, 0, 0), dtype=np.uint8)
+    _write_rgb_image(image_path, image)
+
+    result = CliRunner().invoke(
+        cli.app,
+        [str(image_path), "--output-dir", str(output_dir), "--verbose"],
+    )
+
+    assert result.exit_code == 0, result.output
+    output = _plain_output(result.output)
+    assert "Diagnostics" in output
+    assert "image_size:" in output
+    assert "artifacts:" in output
+
+
+def test_cli_debug_dir_writes_stats(tmp_path: Path) -> None:
+    image_path = tmp_path / "input.png"
+    output_dir = tmp_path / "out"
+    debug_dir = tmp_path / "debug"
+    image = np.full((8, 8, 3), (255, 0, 0), dtype=np.uint8)
+    _write_rgb_image(image_path, image)
+
+    result = CliRunner().invoke(
+        cli.app,
+        [str(image_path), "--output-dir", str(output_dir), "--debug-dir", str(debug_dir)],
+    )
+
+    assert result.exit_code == 0, result.output
+    stats = json.loads((debug_dir / "debug-stats.json").read_text(encoding="utf-8"))
+    assert stats["input"] == str(image_path)
+    assert stats["output_dir"] == str(output_dir)
+    assert stats["color_count"] >= 1
+    assert stats["region_count"] >= 1
+    assert stats["artifacts"] == ["outline.svg", "preview.png", "palette.json", "manifest.json"]
+
+
+def test_cli_debug_dir_reports_clean_error_when_path_is_file(tmp_path: Path) -> None:
+    image_path = tmp_path / "input.png"
+    output_dir = tmp_path / "out"
+    debug_path = tmp_path / "debug-file"
+    image = np.full((8, 8, 3), (255, 0, 0), dtype=np.uint8)
+    _write_rgb_image(image_path, image)
+    debug_path.write_text("not a directory", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        cli.app,
+        [str(image_path), "--output-dir", str(output_dir), "--debug-dir", str(debug_path)],
+    )
+
+    assert result.exit_code != 0
+    assert "could not write debug diagnostics" in result.output
     assert "Traceback" not in result.output
