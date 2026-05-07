@@ -4,9 +4,11 @@ build-backend = "uv_build"
 
 [project]
 name = "paintify"
-version = "0.2.0"
+version = "0.2.1"
 description = "Generate paint-by-numbers artifacts from an input image."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 keywords = ["image-processing", "paint-by-numbers", "cli"]
 classifiers = [
