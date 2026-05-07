@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from paintify.processing.color import rgb_to_lab
+from paintify.processing.color_names import NAMED_COLORS, ColorNameMatcher
 from paintify.processing.palette import (
     CompactingPaletteBuilder,
     CustomPalette,
@@ -92,3 +93,22 @@ def test_compacting_palette_builder_sorts_colors_by_visual_order() -> None:
     assert [entry.hex for entry in entries] == ["#ff0000", "#00ff00", "#0000ff"]
     assert compact_labels.tolist() == [[2, 0, 1]]
     assert [region.color_index for region in compact_regions] == [2, 0, 1]
+
+
+def test_color_name_matcher_uses_vendored_matplotlib_names() -> None:
+    assert ("red", "#FF0000") in NAMED_COLORS
+    assert ("xkcd:cloudy blue", "#acc2d9") in NAMED_COLORS
+
+
+def test_color_name_matcher_finds_nearest_name() -> None:
+    matcher = ColorNameMatcher((("red", "#ff0000"), ("blue", "#0000ff")))
+
+    assert matcher.closest_name((250, 10, 10)) == "red"
+
+
+def test_palette_entry_builder_adds_color_names() -> None:
+    lab_colors = rgb_to_lab(np.array([[255, 0, 0]], dtype=np.uint8))
+
+    entries = PaletteEntryBuilder().build(lab_colors)
+
+    assert entries[0].name == "red"

@@ -167,3 +167,7 @@ def test_palette_output_is_compacted_after_region_merge(tmp_path: Path) -> None:
     assert len(result.palette) == 1
     assert len(palette) == 1
     assert {region["palette_index"] for region in manifest["regions"]} == {1}
+    assert isinstance(palette[0]["name"], str)
+    assert palette[0]["name"]
+    assert isinstance(manifest["palette"][0]["name"], str)
+    assert manifest["palette"][0]["name"]

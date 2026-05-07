@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from paintify.processing.color import lab_to_rgb, rgb_to_lab
+from paintify.processing.color_names import ColorNameMatcher
 from paintify.processing.region_table import Region
 
 
@@ -19,10 +20,11 @@ class PaletteEntry:
     index: int
     hex: str
     rgb: tuple[int, int, int]
+    name: str
 
     @classmethod
-    def from_rgb(cls, index: int, rgb: tuple[int, int, int]) -> "PaletteEntry":
-        return cls(index=index, hex=cls._rgb_to_hex(rgb), rgb=rgb)
+    def from_rgb(cls, index: int, rgb: tuple[int, int, int], name: str) -> "PaletteEntry":
+        return cls(index=index, hex=cls._rgb_to_hex(rgb), rgb=rgb, name=name)
 
     @staticmethod
     def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
@@ -80,6 +82,15 @@ class CustomPalette:
 
 
 class PaletteEntryBuilder:
+    def __init__(
+        self,
+        color_name_matcher: ColorNameMatcher | None = None,
+        *,
+        include_names: bool = True,
+    ) -> None:
+        self._color_name_matcher = color_name_matcher
+        self._include_names = include_names
+
     def build(self, lab_colors: np.ndarray) -> list[PaletteEntry]:
         rgb_values = self._lab_to_uint8_rgb(lab_colors)
         entries: list[PaletteEntry] = []
@@ -89,8 +100,21 @@ class PaletteEntryBuilder:
             if rgb in seen:
                 continue
             seen.add(rgb)
-            entries.append(PaletteEntry.from_rgb(index=len(entries) + 1, rgb=rgb))
+            entries.append(
+                PaletteEntry.from_rgb(
+                    index=len(entries) + 1,
+                    rgb=rgb,
+                    name=self._color_name(rgb),
+                )
+            )
         return entries
+
+    def _color_name(self, rgb: tuple[int, int, int]) -> str:
+        if not self._include_names:
+            return ""
+        if self._color_name_matcher is None:
+            self._color_name_matcher = ColorNameMatcher()
+        return self._color_name_matcher.closest_name(rgb)
 
     @staticmethod
     def _lab_to_uint8_rgb(lab_colors: np.ndarray) -> np.ndarray:
