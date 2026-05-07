@@ -1,3 +1,4 @@
+import colorsys
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -112,4 +113,31 @@ class CompactingPaletteBuilder:
             replace(region, color_index=index_map[region.color_index]) for region in regions
         ]
         compact_palette = lab_palette[used_indices]
-        return compact_labels, compact_palette, compact_regions
+        visual_order = self._visual_order(compact_palette)
+        visual_index_map = {
+            old_index: new_index for new_index, old_index in enumerate(visual_order)
+        }
+        visual_labels = np.zeros_like(compact_labels, dtype=np.int32)
+        for old_index, new_index in visual_index_map.items():
+            visual_labels[compact_labels == old_index] = new_index
+        visual_regions = [
+            replace(region, color_index=visual_index_map[region.color_index])
+            for region in compact_regions
+        ]
+        return visual_labels, compact_palette[visual_order], visual_regions
+
+    @classmethod
+    def _visual_order(cls, lab_palette: np.ndarray) -> list[int]:
+        rgb_palette = lab_to_rgb(lab_palette)
+        return sorted(
+            range(len(rgb_palette)),
+            key=lambda index: cls._visual_sort_key(rgb_palette[index]),
+        )
+
+    @staticmethod
+    def _visual_sort_key(rgb: np.ndarray) -> tuple[float, float, float]:
+        red = int(rgb[0]) / 255.0
+        green = int(rgb[1]) / 255.0
+        blue = int(rgb[2]) / 255.0
+        hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
+        return hue, lightness, saturation
