@@ -1,0 +1,302 @@
+[
+  {
+    "index": 1,
+    "hex": "#40332b",
+    "rgb": [
+      64,
+      51,
+      43
+    ],
+    "name": "xkcd:dark grey"
+  },
+  {
+    "index": 2,
+    "hex": "#afa39a",
+    "rgb": [
+      175,
+      163,
+      154
+    ],
+    "name": "xkcd:greyish"
+  },
+  {
+    "index": 3,
+    "hex": "#4a3e35",
+    "rgb": [
+      74,
+      62,
+      53
+    ],
+    "name": "xkcd:dark grey"
+  },
+  {
+    "index": 4,
+    "hex": "#534941",
+    "rgb": [
+      83,
+      73,
+      65
+    ],
+    "name": "xkcd:charcoal grey"
+  },
+  {
+    "index": 5,
+    "hex": "#352b23",
+    "rgb": [
+      53,
+      43,
+      35
+    ],
+    "name": "xkcd:dark grey"
+  },
+  {
+    "index": 6,
+    "hex": "#d5b79d",
+    "rgb": [
+      213,
+      183,
+      157
+    ],
+    "name": "tan"
+  },
+  {
+    "index": 7,
+    "hex": "#c8a98c",
+    "rgb": [
+      200,
+      169,
+      140
+    ],
+    "name": "xkcd:taupe"
+  },
+  {
+    "index": 8,
+    "hex": "#b8997b",
+    "rgb": [
+      184,
+      153,
+      123
+    ],
+    "name": "xkcd:pale brown"
+  },
+  {
+    "index": 9,
+    "hex": "#bf752d",
+    "rgb": [
+      191,
+      117,
+      45
+    ],
+    "name": "peru"
+  },
+  {
+    "index": 10,
+    "hex": "#6c441c",
+    "rgb": [
+      108,
+      68,
+      28
+    ],
+    "name": "xkcd:milk chocolate"
+  },
+  {
+    "index": 11,
+    "hex": "#e9c7a5",
+    "rgb": [
+      233,
+      199,
+      165
+    ],
+    "name": "xkcd:light peach"
+  },
+  {
+    "index": 12,
+    "hex": "#8f5c28",
+    "rgb": [
+      143,
+      92,
+      40
+    ],
+    "name": "xkcd:sepia"
+  },
+  {
+    "index": 13,
+    "hex": "#f5dbc0",
+    "rgb": [
+      245,
+      219,
+      192
+    ],
+    "name": "bisque"
+  },
+  {
+    "index": 14,
+    "hex": "#916d47",
+    "rgb": [
+      145,
+      109,
+      71
+    ],
+    "name": "xkcd:dirt"
+  },
+  {
+    "index": 15,
+    "hex": "#d99241",
+    "rgb": [
+      217,
+      146,
+      65
+    ],
+    "name": "xkcd:dull orange"
+  },
+  {
+    "index": 16,
+    "hex": "#a1896d",
+    "rgb": [
+      161,
+      137,
+      109
+    ],
+    "name": "xkcd:pale brown"
+  },
+  {
+    "index": 17,
+    "hex": "#af8656",
+    "rgb": [
+      175,
+      134,
+      86
+    ],
+    "name": "xkcd:light brown"
+  },
+  {
+    "index": 18,
+    "hex": "#deb075",
+    "rgb": [
+      222,
+      176,
+      117
+    ],
+    "name": "xkcd:tan"
+  },
+  {
+    "index": 19,
+    "hex": "#8f7a5e",
+    "rgb": [
+      143,
+      122,
+      94
+    ],
+    "name": "xkcd:brownish grey"
+  },
+  {
+    "index": 20,
+    "hex": "#f1ae50",
+    "rgb": [
+      241,
+      174,
+      80
+    ],
+    "name": "xkcd:butterscotch"
+  },
+  {
+    "index": 21,
+    "hex": "#979086",
+    "rgb": [
+      151,
+      144,
+      134
+    ],
+    "name": "xkcd:warm grey"
+  },
+  {
+    "index": 22,
+    "hex": "#655a48",
+    "rgb": [
+      101,
+      90,
+      72
+    ],
+    "name": "xkcd:greyish brown"
+  },
+  {
+    "index": 23,
+    "hex": "#746d5c",
+    "rgb": [
+      116,
+      109,
+      92
+    ],
+    "name": "xkcd:brownish grey"
+  },
+  {
+    "index": 24,
+    "hex": "#7f7f78",
+    "rgb": [
+      127,
+      127,
+      120
+    ],
+    "name": "xkcd:medium grey"
+  },
+  {
+    "index": 25,
+    "hex": "#20231b",
+    "rgb": [
+      32,
+      35,
+      27
+    ],
+    "name": "xkcd:charcoal"
+  },
+  {
+    "index": 26,
+    "hex": "#0e130a",
+    "rgb": [
+      14,
+      19,
+      10
+    ],
+    "name": "xkcd:almost black"
+  },
+  {
+    "index": 27,
+    "hex": "#304038",
+    "rgb": [
+      48,
+      64,
+      56
+    ],
+    "name": "xkcd:charcoal"
+  },
+  {
+    "index": 28,
+    "hex": "#565f5d",
+    "rgb": [
+      86,
+      95,
+      93
+    ],
+    "name": "xkcd:gunmetal"
+  },
+  {
+    "index": 29,
+    "hex": "#6b7178",
+    "rgb": [
+      107,
+      113,
+      120
+    ],
+    "name": "xkcd:battleship grey"
+  },
+  {
+    "index": 30,
+    "hex": "#7e899c",
+    "rgb": [
+      126,
+      137,
+      156
+    ],
+    "name": "lightslategray"
+  }
+]

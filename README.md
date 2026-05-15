@@ -1,5 +1,7 @@
 # paintify
 
+![paintify preview](example/preview.png)
+
 `paintify` is a Python CLI for turning regular images into paint-by-numbers templates.
 It takes one input image and generates a printable outline, a colored preview, a numbered paint
 palette, and a machine-readable manifest with the exact settings used for the run.
@@ -16,6 +18,9 @@ Every run writes these files to the output directory:
 - `preview.png`: a colored preview with boundaries and labels, useful for checking the result.
 - `palette.json`: the numbered paint palette as JSON.
 - `manifest.json`: reproducibility metadata, settings, palette, regions, and label positions.
+
+You can inspect a generated set of these artifacts in [`example/`](example/), including the
+source image at `example/input.jpg`.
 
 ## Installation
 
